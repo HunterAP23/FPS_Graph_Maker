@@ -29,5 +29,5 @@ from 0 - 3 to specify what graphs you want generated:
   * If no number is given, assume 3
 
 After the initial creation of the graph(s), the program will then use FFmpeg
-to export each frame as a PNG with transparency into a newly created subfolder
+to export each frame as a PNG into a newly created subfolder
 in the program's main folder.

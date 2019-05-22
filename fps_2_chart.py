@@ -14,6 +14,17 @@ def anim_progress(curFrame, totalFrames):
     sys.stdout.write("\rSaving frame " + str(curFrame) + " out of " + str(totalFrames) + " : " + percent + " %")
     sys.stdout.flush()
 
+def should_generate_graph(curFile):
+    if os.path.isfile(curFile):
+        overWrite = input(str(curFile) + " already exists, do you want to generate the graph again? (0 -> No, 1 -> Yes)")
+        if int(overWrite) == 0 or int(overWrite) is 0:
+            return False
+        else:
+            return True
+    else:
+        print(str(curFile) + " does not exist, generating.")
+        return True
+
 if __name__ == '__main__':
     myCSV = None
     filesToSave = None
@@ -210,40 +221,46 @@ if __name__ == '__main__':
         pat, fil = os.getcwd().split("fps_2_chart.py")
     tmpList = []
     if filesToSave == 0:
-        print("Saving FPS Graph to " + str(pat) + "anim_fps.mp4")
-        anim_fps.save(str(pat) + "anim_fps.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
-        print("Done.\n")
+        if should_generate_graph(str(pat) + "anim_fps.mp4"):
+            print("Saving FPS Graph to " + str(pat) + "anim_fps.mp4")
+            anim_fps.save(str(pat) + "anim_fps.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
+            print("Done.\n")
         tmpList = [str(pat) + "anim_fps.mp4"]
     elif filesToSave == 1:
-        print("Saving Frame Time Graph to " + str(pat) + "anim_frametime.mp4")
-        anim_frametime.save(str(pat) + "anim_frametime.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=lambda i, n: print(f'Saving frame {i} of {n}'))
-        print("Done.\n")
+        if should_generate_graph(str(pat) + "anim_frametime.mp4"):
+            print("Saving Frame Time Graph to " + str(pat) + "anim_frametime.mp4")
+            anim_frametime.save(str(pat) + "anim_frametime.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
+            print("Done.\n")
         tmpList = [str(pat) + "anim_frametime.mp4"]
     elif filesToSave == 2:
-        print("Saving Combined FPS + Frame Time Graph to " + str(pat) + "anim_combined.mp4")
-        anim_combined.save(str(pat) + "anim_combined.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=lambda i, n: print(f'Saving frame {i} of {n}'))
-        print("Done.\n")
+        if should_generate_graph(str(pat) + "anim_combined.mp4"):
+            print("Saving Combined FPS + Frame Time Graph to " + str(pat) + "anim_combined.mp4")
+            anim_combined.save(str(pat) + "anim_combined.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
+            print("Done.\n")
         tmpList = [str(pat) + "anim_combined.mp4"]
     elif filesToSave == 3:
         print("Saving all three files to " + str(pat))
 
-        print("Saving FPS Graph.")
-        anim_fps.save(str(pat) + "anim_fps.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=lambda i, n: print(f'Saving frame {i} of {n}'))
-        print("Done.\n")
+        if should_generate_graph(str(pat) + "anim_fps.mp4"):
+            print("Saving FPS Graph.")
+            anim_fps.save(str(pat) + "anim_fps.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
+            print("Done.\n")
 
-        print("Saving Frame Time Graph.")
-        anim_frametime.save(str(pat) + "anim_frametime.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=lambda i, n: print(f'Saving frame {i} of {n}'))
-        print("Done.\n")
+        if should_generate_graph(str(pat) + "anim_frametime.mp4"):
+            print("Saving Frame Time Graph.")
+            anim_frametime.save(str(pat) + "anim_frametime.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
+            print("Done.\n")
 
-        print("Saving Combined FPS + Frame Time Graph.")
-        anim_combined.save(str(pat) + "anim_combined.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=lambda i, n: print(f'Saving frame {i} of {n}'))
-        print("Done.\n")
+        if should_generate_graph(str(pat) + "anim_combined.mp4"):
+            print("Saving Combined FPS + Frame Time Graph.")
+            anim_combined.save(str(pat) + "anim_combined.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
+            print("Done.\n")
         tmpList = [str(pat) + "anim_fps.mp4", str(pat) + "anim_frametime.mp4", str(pat) + "anim_combined.mp4"]
 
     # Then we use ffmpeg through the ffmpy module to re-encode
     # the videos with transparency in MOV format OR just raw PNG's
     # For now the program will default to raw PNG's within a created subfolder.
-    print("Beginning process to extract frames as transparent PNG's.")
+    print("Beginning process to extract frames as PNG's.")
     for file in tmpList:
         print("Re-encoding " + str(file))
         # exportName = file.replace(".mp4", "_PNG.mov")
@@ -254,7 +271,7 @@ if __name__ == '__main__':
             pass
         outputLoc = str(folderName) + "\\%d.png"
         encoderCommands = []
-        tmpCommands = "-hide_banner -i " + repr(file) + " -crf 18 -c:v png -vf chromakey=white -pix_fmt rgb32"
+        tmpCommands = '-hide_banner -i ' + repr(file) + ' -crf 18 -c:v png '
         tmpStuff = shlex.split(tmpCommands)
         for i in range(0, len(tmpStuff), 1):
             encoderCommands.append(tmpStuff[i])
