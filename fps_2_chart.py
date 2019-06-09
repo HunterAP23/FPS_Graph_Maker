@@ -6,24 +6,49 @@ import pandas as pd
 import numpy as np
 import shlex
 import ffmpy
+import math
 import sys
 import os
 
+
 def anim_progress(curFrame, totalFrames):
-    percent = (str(round(curFrame * 100 / totalFrames)))
-    sys.stdout.write("\rSaving frame " + str(curFrame) + " out of " + str(totalFrames) + " : " + percent + " %")
+    percent = '{0:.2f}'.format(curFrame * 100 / totalFrames).zfill(5)
+    sys.stdout.write("\rSaving frame " + str(curFrame) + " out of " + str(totalFrames) + " : " + percent + "%")
     sys.stdout.flush()
+
 
 def should_generate_graph(curFile):
     if os.path.isfile(curFile):
-        overWrite = input(str(curFile) + " already exists, do you want to generate the graph again? (0 -> No, 1 -> Yes)")
-        if int(overWrite) == 0 or int(overWrite) is 0:
+        overWrite = input(str(curFile) + " already exists, do you want to generate the graph again? (0 -> No, 1 -> Yes): ")
+        if int(overWrite) == 0:
             return False
         else:
             return True
     else:
         print(str(curFile) + " does not exist, generating.")
         return True
+
+
+def add_steppings(array):
+    arrayList = []
+    for item in range(array.size):
+        tpSteps = None
+        if item == array.size - 1:
+            tmpSteps = np.repeat(array[item], 60)
+            stepsList = tmpSteps.tolist()
+            if len(arrayList) == 0:
+                arrayList = stepsList
+            else:
+                arrayList.extend(stepsList)
+        else:
+            tmpSteps = np.linspace(array[item], array[item+1], 60)
+            stepsList = tmpSteps.tolist()
+            if len(arrayList) == 0:
+                arrayList = stepsList
+            else:
+                arrayList.extend(stepsList)
+    return np.array(arrayList)
+
 
 if __name__ == '__main__':
     myCSV = None
@@ -119,6 +144,7 @@ if __name__ == '__main__':
     # x -> FPS timestamp
     # y -> FPS value at that timestamp
     x = np.asarray(df.index)
+    # x = np.asarray(df.index) * 1000
     y = np.asarray(df['FPS_value'])
 
     # set the font size to 22
@@ -133,17 +159,33 @@ if __name__ == '__main__':
 
     # Some FPS values can be 0
     # Frame times are calculated as 1000 / FPS value
-    # That means wee'd get a division-by-zero error
-    # To get aroudn this, we ignore any division-by zero errors
-    # The next problem is that the program will put in "inf" and "-inf"
-    # as the values, so we have to replace them with 0 so the graph doesn't look bad
+    # That means we'd get a division-by-zero error
+    # To get around this, we ignore any division-by zero errors
+    # The next problem is that the program will put in "inf" and "-inf" as the
+    # values, so we have to replace them with 0 so the graph doesn't look bad
     print("Removing inf frame-time values from doing division-by-zero.")
     with np.errstate(divide='ignore', invalid='ignore'):
         y2 = np.asarray(1000 / df['FPS_value'])
     y2[y2 == inf] = 0
     y2[y2 == -inf] = 0
 
-    length = len(df['FPS_value'])  # Total count of frames
+    # Since we only get FPS values roughly every second, rather than multiple
+    # times a second, we'll be repeating values to smooth out the graph for 60
+    # FPS playback.
+    # For the X axis, we'll have this program make 60 steps for get from one
+    # x value to the next.
+    # We can do the same for the Y values, but for now it'll just stay at the
+    # same values.
+    print("Making equal spacing between X axis values.")
+    x = add_steppings(x)
+    y = add_steppings(y)
+    y2 = add_steppings(y2)
+
+    # print("Repeating values to fit 60 FPS video format.")
+    # y = np.repeat(y, 60)
+    # y2 = np.repeat(y2, 60)
+
+    length = len(x)  # Total count of frames
     minFPS = y.min()  # Lowest recorded FPS value
     maxFPS = y.max()  # Highest recorded FPS value
     minTime = y2.min()  # Lowest recorded frametime
@@ -161,6 +203,7 @@ if __name__ == '__main__':
     ax.set_xlim(x[0] - x[60], x[60])
     # Remove the X-axis ticks
     ax.set_xticklabels([])
+
     # line is just for the FPS graph
     line, = ax.plot(x, y)
     # line2 is just for the frametime graph
@@ -217,26 +260,27 @@ if __name__ == '__main__':
 
     rem = os.path.basename(myCSV)
     pat, fil = os.path.abspath(myCSV).split(rem)
-    if pat == "" or pat is "":
+    if pat == "":
         pat, fil = os.getcwd().split("fps_2_chart.py")
     tmpList = []
+
     if filesToSave == 0:
         if should_generate_graph(str(pat) + "anim_fps.mp4"):
             print("Saving FPS Graph to " + str(pat) + "anim_fps.mp4")
             anim_fps.save(str(pat) + "anim_fps.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
-            print("Done.\n")
+            print("\nDone.\n")
         tmpList = [str(pat) + "anim_fps.mp4"]
     elif filesToSave == 1:
         if should_generate_graph(str(pat) + "anim_frametime.mp4"):
             print("Saving Frame Time Graph to " + str(pat) + "anim_frametime.mp4")
             anim_frametime.save(str(pat) + "anim_frametime.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
-            print("Done.\n")
+            print("\nDone.\n")
         tmpList = [str(pat) + "anim_frametime.mp4"]
     elif filesToSave == 2:
         if should_generate_graph(str(pat) + "anim_combined.mp4"):
             print("Saving Combined FPS + Frame Time Graph to " + str(pat) + "anim_combined.mp4")
             anim_combined.save(str(pat) + "anim_combined.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
-            print("Done.\n")
+            print("\nDone.\n")
         tmpList = [str(pat) + "anim_combined.mp4"]
     elif filesToSave == 3:
         print("Saving all three files to " + str(pat))
@@ -244,17 +288,17 @@ if __name__ == '__main__':
         if should_generate_graph(str(pat) + "anim_fps.mp4"):
             print("Saving FPS Graph.")
             anim_fps.save(str(pat) + "anim_fps.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
-            print("Done.\n")
+            print("\nDone.\n")
 
         if should_generate_graph(str(pat) + "anim_frametime.mp4"):
             print("Saving Frame Time Graph.")
             anim_frametime.save(str(pat) + "anim_frametime.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
-            print("Done.\n")
+            print("\nDone.\n")
 
         if should_generate_graph(str(pat) + "anim_combined.mp4"):
             print("Saving Combined FPS + Frame Time Graph.")
             anim_combined.save(str(pat) + "anim_combined.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
-            print("Done.\n")
+            print("\nDone.\n")
         tmpList = [str(pat) + "anim_fps.mp4", str(pat) + "anim_frametime.mp4", str(pat) + "anim_combined.mp4"]
 
     # Then we use ffmpeg through the ffmpy module to re-encode
