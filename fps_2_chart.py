@@ -176,7 +176,7 @@ if __name__ == '__main__':
     # x value to the next.
     # We can do the same for the Y values, but for now it'll just stay at the
     # same values.
-    print("Making equal spacing between X axis values.")
+    print("Making equal spacing between X axis values (to simulate 60fps)")
     x = add_steppings(x)
     y = add_steppings(y)
     y2 = add_steppings(y2)
