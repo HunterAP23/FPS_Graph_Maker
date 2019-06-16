@@ -265,62 +265,63 @@ if __name__ == '__main__':
     tmpList = []
 
     if filesToSave == 0:
-        if should_generate_graph(str(pat) + "anim_fps.mp4"):
-            print("Saving FPS Graph to " + str(pat) + "anim_fps.mp4")
-            anim_fps.save(str(pat) + "anim_fps.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
+        if should_generate_graph(str(pat) + "anim_fps.mov"):
+            print("Saving FPS Graph to " + str(pat) + "anim_fps.mov")
+            # anim_fps.save(str(pat) + "anim_fps.mov", codec="png", fps=60, dpi=100, savefig_kwargs={'transparent': True, 'facecolor': 'none'}, progress_callback=anim_progress)
+            anim_fps.save(str(pat) + "anim_fps.mov", extra_args=['-c:v', 'png'], fps=60, dpi=100, savefig_kwargs={'transparent': True, 'facecolor': 'none'}, progress_callback=anim_progress)
             print("\nDone.\n")
-        tmpList = [str(pat) + "anim_fps.mp4"]
+        tmpList = [str(pat) + "anim_fps.mov"]
     elif filesToSave == 1:
-        if should_generate_graph(str(pat) + "anim_frametime.mp4"):
-            print("Saving Frame Time Graph to " + str(pat) + "anim_frametime.mp4")
-            anim_frametime.save(str(pat) + "anim_frametime.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
+        if should_generate_graph(str(pat) + "anim_frametime.mov"):
+            print("Saving Frame Time Graph to " + str(pat) + "anim_frametime.mov")
+            anim_frametime.save(str(pat) + "anim_frametime.mov", extra_args=['-c:v', 'png'], fps=60, dpi=100, savefig_kwargs={'transparent': True, 'facecolor': 'none'}, progress_callback=anim_progress)
             print("\nDone.\n")
-        tmpList = [str(pat) + "anim_frametime.mp4"]
+        tmpList = [str(pat) + "anim_frametime.mov"]
     elif filesToSave == 2:
-        if should_generate_graph(str(pat) + "anim_combined.mp4"):
-            print("Saving Combined FPS + Frame Time Graph to " + str(pat) + "anim_combined.mp4")
-            anim_combined.save(str(pat) + "anim_combined.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
+        if should_generate_graph(str(pat) + "anim_combined.mov"):
+            print("Saving Combined FPS + Frame Time Graph to " + str(pat) + "anim_combined.mov")
+            anim_combined.save(str(pat) + "anim_combined.mov", extra_args=['-c:v', 'png'], fps=60, dpi=100, savefig_kwargs={'transparent': True, 'facecolor': 'none'}, progress_callback=anim_progress)
             print("\nDone.\n")
-        tmpList = [str(pat) + "anim_combined.mp4"]
+        tmpList = [str(pat) + "anim_combined.mov"]
     elif filesToSave == 3:
         print("Saving all three files to " + str(pat))
 
-        if should_generate_graph(str(pat) + "anim_fps.mp4"):
+        if should_generate_graph(str(pat) + "anim_fps.mov"):
             print("Saving FPS Graph.")
-            anim_fps.save(str(pat) + "anim_fps.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
+            anim_fps.save(str(pat) + "anim_fps.mov", extra_args=['-c:v', 'png'], fps=60, dpi=100, savefig_kwargs={'transparent': True, 'facecolor': 'none'}, progress_callback=anim_progress)
             print("\nDone.\n")
 
-        if should_generate_graph(str(pat) + "anim_frametime.mp4"):
+        if should_generate_graph(str(pat) + "anim_frametime.mov"):
             print("Saving Frame Time Graph.")
-            anim_frametime.save(str(pat) + "anim_frametime.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
+            anim_frametime.save(str(pat) + "anim_frametime.mov", extra_args=['-c:v', 'png'], fps=60, dpi=100, savefig_kwargs={'transparent': True, 'facecolor': 'none'}, progress_callback=anim_progress)
             print("\nDone.\n")
 
-        if should_generate_graph(str(pat) + "anim_combined.mp4"):
+        if should_generate_graph(str(pat) + "anim_combined.mov"):
             print("Saving Combined FPS + Frame Time Graph.")
-            anim_combined.save(str(pat) + "anim_combined.mp4", fps=60, dpi=100, extra_args=['-c:v', 'libx264'], progress_callback=anim_progress)
+            anim_combined.save(str(pat) + "anim_combined.mov", extra_args=['-c:v', 'png'], fps=60, dpi=100, savefig_kwargs={'transparent': True, 'facecolor': 'none'}, progress_callback=anim_progress)
             print("\nDone.\n")
-        tmpList = [str(pat) + "anim_fps.mp4", str(pat) + "anim_frametime.mp4", str(pat) + "anim_combined.mp4"]
+        tmpList = [str(pat) + "anim_fps.mov", str(pat) + "anim_frametime.mov", str(pat) + "anim_combined.mov"]
 
     # Then we use ffmpeg through the ffmpy module to re-encode
     # the videos with transparency in MOV format OR just raw PNG's
     # For now the program will default to raw PNG's within a created subfolder.
-    print("Beginning process to extract frames as PNG's.")
-    for file in tmpList:
-        print("Re-encoding " + str(file))
-        # exportName = file.replace(".mp4", "_PNG.mov")
-        folderName = file.replace(".mp4", "_PNG")
-        try:
-            os.mkdir(str(folderName))
-        except FileExistsError as excpt:
-            pass
-        outputLoc = str(folderName) + "\\%d.png"
-        encoderCommands = []
-        tmpCommands = '-hide_banner -i ' + repr(file) + ' -crf 18 -c:v png '
-        tmpStuff = shlex.split(tmpCommands)
-        for i in range(0, len(tmpStuff), 1):
-            encoderCommands.append(tmpStuff[i])
-
-        myPass = ffmpy.FFmpeg(
-            outputs={str(outputLoc): encoderCommands}
-        )
-        myPass.run()
+    # print("Beginning process to extract frames as PNG's.")
+    # for file in tmpList:
+    #     print("Re-encoding " + str(file))
+    #     # exportName = file.replace(".mp4", "_PNG.mov")
+    #     folderName = file.replace(".mp4", "_PNG")
+    #     try:
+    #         os.mkdir(str(folderName))
+    #     except FileExistsError as excpt:
+    #         pass
+    #     outputLoc = str(folderName) + "\\%d.png"
+    #     encoderCommands = []
+    #     tmpCommands = '-hide_banner -i ' + repr(file) + ' -crf 18 -c:v png '
+    #     tmpStuff = shlex.split(tmpCommands)
+    #     for i in range(0, len(tmpStuff), 1):
+    #         encoderCommands.append(tmpStuff[i])
+    #
+    #     myPass = ffmpy.FFmpeg(
+    #         outputs={str(outputLoc): encoderCommands}
+    #     )
+    #     myPass.run()
