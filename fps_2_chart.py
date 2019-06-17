@@ -154,7 +154,8 @@ if __name__ == '__main__':
     # The inch size actually gets tranlated into the resolution
     # So 19.2 x 10.8 -> 1920x1080
     # Right now it's set to 4k, but it's easily changeable
-    fig.set_size_inches(38.4, 21.6)
+    # fig.set_size_inches(38.4, 21.6)
+    fig.set_size_inches(12.8, 7.2)
     fig.dpi = 100
 
     # Some FPS values can be 0
@@ -268,7 +269,8 @@ if __name__ == '__main__':
         if should_generate_graph(str(pat) + "anim_fps.mov"):
             print("Saving FPS Graph to " + str(pat) + "anim_fps.mov")
             # anim_fps.save(str(pat) + "anim_fps.mov", codec="png", fps=60, dpi=100, savefig_kwargs={'transparent': True, 'facecolor': 'none'}, progress_callback=anim_progress)
-            anim_fps.save(str(pat) + "anim_fps.mov", extra_args=['-c:v', 'png'], fps=60, dpi=100, savefig_kwargs={'transparent': True, 'facecolor': 'none'}, progress_callback=anim_progress)
+            anim_fps.save(str(pat) + "anim_fps.mov", extra_args=['-c:v', 'prores_ks', '-pix_fmt', 'yuva444p10le', '-alpha_bits', '16', '-profile:v', '4444'], fps=60, dpi=100, savefig_kwargs={'transparent': True, 'facecolor': 'none'}, progress_callback=anim_progress)
+            # anim_fps.save(str(pat) + "anim_fps.mov", extra_args=['-c:v', 'png'], fps=60, dpi=100, savefig_kwargs={'transparent': True, 'facecolor': 'none'}, progress_callback=anim_progress)
             print("\nDone.\n")
         tmpList = [str(pat) + "anim_fps.mov"]
     elif filesToSave == 1:
@@ -323,5 +325,19 @@ if __name__ == '__main__':
     #
     #     myPass = ffmpy.FFmpeg(
     #         outputs={str(outputLoc): encoderCommands}
+    #     )
+    #     myPass.run()
+
+    # for file in tmpList:
+    #     print("Re-encoding " + str(file))
+    #     exportName = file.replace(".mov", "_TEST.mov")
+    #     encoderCommands = []
+    #     tmpCommands = '-hide_banner -i ' + repr(file) + ' -r 60 -codec prores_ks -pix_fmt yuva444p10le -alpha_bits 16 -profile:v 4444 -f mov '
+    #     tmpStuff = shlex.split(tmpCommands)
+    #     for i in range(0, len(tmpStuff), 1):
+    #         encoderCommands.append(tmpStuff[i])
+    #
+    #     myPass = ffmpy.FFmpeg(
+    #         outputs={str(exportName): encoderCommands}
     #     )
     #     myPass.run()
