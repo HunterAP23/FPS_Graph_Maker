@@ -154,8 +154,7 @@ if __name__ == '__main__':
     # The inch size actually gets tranlated into the resolution
     # So 19.2 x 10.8 -> 1920x1080
     # Right now it's set to 4k, but it's easily changeable
-    # fig.set_size_inches(38.4, 21.6)
-    fig.set_size_inches(12.8, 7.2)
+    fig.set_size_inches(38.4, 21.6)
     fig.dpi = 100
 
     # Some FPS values can be 0
