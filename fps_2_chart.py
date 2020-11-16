@@ -2,6 +2,7 @@ from io import StringIO
 from matplotlib import animation
 import matplotlib.pyplot as plt
 import argparse as argp
+import copy
 import pandas as pd
 import numpy as np
 import shlex
@@ -19,7 +20,7 @@ def anim_progress(cur_frame, total_frames):
 
 def should_generate_graph(cur_file, overwrite):
     if overwrite:
-        print("User sepcified the overwrite argument, replacing old graphs with new ones.")
+        print("User specified the overwrite argument, replacing old graphs with new ones.")
         return True
     elif os.path.isfile(cur_file):
         overwrite = input(str(cur_file) + " already exists, do you want to generate the graph again? (0 -> No, 1 -> Yes): ")
@@ -98,25 +99,45 @@ def main(args):
         "animation.codec": "qtrle",
         "font.size": 26,
         })
-    fig, ax = plt.subplots()
-    fig.patch.set_alpha(0.)
+    # fig, ax = plt.subplots()
+    fig_fps = plt.figure(1)
+    fig_frametime = plt.figure(2)
+    fig_combined = plt.figure(3)
+
+    fig_fps.patch.set_alpha(0.)
+    fig_frametime.patch.set_alpha(0.)
+    fig_combined.patch.set_alpha(0.)
     # The inch size actually gets tranlated into the resolution
     # So 19.2 x 10.8 -> 1920x1080
     if args.res:
         if args.res == "720p":
-            fig.set_size_inches(12.8, 7.2)
+            fig_fps.set_size_inches(12.8, 7.2)
+            fig_frametime.set_size_inches(12.8, 7.2)
+            fig_combined.set_size_inches(12.8, 7.2)
         elif args.res == "1080p":
-            fig.set_size_inches(19.2, 10.8)
+            fig_fps.set_size_inches(19.2, 10.8)
+            fig_frametime.set_size_inches(12.8, 7.2)
+            fig_combined.set_size_inches(12.8, 7.2)
         elif args.res == "1440p":
-            fig.set_size_inches(25.6, 14.4)
+            fig_fps.set_size_inches(25.6, 14.4)
+            fig_frametime.set_size_inches(12.8, 7.2)
+            fig_combined.set_size_inches(12.8, 7.2)
         elif args.res == "4k":
-            fig.set_size_inches(38.4, 21.6)
+            fig_fps.set_size_inches(38.4, 21.6)
+            fig_frametime.set_size_inches(12.8, 7.2)
+            fig_combined.set_size_inches(12.8, 7.2)
     else:
-        fig.set_size_inches(19.2, 10.8)
+        fig_fps.set_size_inches(19.2, 10.8)
+        fig_frametime.set_size_inches(12.8, 7.2)
+        fig_combined.set_size_inches(12.8, 7.2)
     if args.dpi:
-        fig.dpi = args.dpi
+        fig_fps.dpi = args.dpi
+        fig_frametime.dpi = args.dpi
+        fig_combined.dpi = args.dpi
     else:
-        fig.dpi = 100
+        fig_fps.dpi = 100
+        fig_frametime.dpi = 100
+        fig_combined.dpi = 100
 
     # Some FPS values can be 0
     # Frame times are calculated as 1000 / FPS value
@@ -163,63 +184,75 @@ def main(args):
     print("Minimum Frametime: {0}ms".format(time_min))
     print("Maximum Frametime: {0}ms".format(time_max))
 
-    # Set the range for the Y-axis between 0 and 70
-    ax.set_ylim(0, 70)
-    # Set the range for the initial X-axis
-    ax.set_xlim(x.array[0] - x.array[60], x.array[60])
-    # Remove the X-axis ticks
-    ax.set_xticklabels([])
+    ax_fps = fig_fps.subplots()
+    ax_frametime = fig_frametime.subplots()
+    ax_combined = fig_combined.subplots()
 
-    # line is just for the FPS graph
-    line, = ax.plot(x, y, "b")
-    # line2 is just for the frametime graph
-    line2, = ax.plot(x, y2, "r")
+    # Set the range for the Y-axis between 0 and 70
+    ax_fps.set_ylim(0, 70)
+    ax_frametime.set_ylim(0, 70)
+    ax_combined.set_ylim(0, 70)
+    # Set the range for the initial X-axis
+    ax_fps.set_xlim(x.array[0] - x.array[60], x.array[60])
+    ax_frametime.set_xlim(x.array[0] - x.array[60], x.array[60])
+    ax_combined.set_xlim(x.array[0] - x.array[60], x.array[60])
+    # Remove the X-axis ticks
+    ax_fps.set_xticklabels([])
+    ax_frametime.set_xticklabels([])
+    ax_combined.set_xticklabels([])
+
+    line_fps, = ax_fps.plot(x, y, "b")
+    line_frametime, = ax_frametime.plot(x, y2, "r")
+    line_combined1, = ax_combined.plot(x, y, "b")
+    line_combined2, = ax_combined.plot(x, y2, "r")
 
     # Misc functions needed for the graphs
     # Ones with _fps are just for the FPS graph
     # Others with _frametime are just for the frametime
     # The ones with _combined are for both FPS + frametime in one chart
     def init_fps():
-        line.set_data([], [])
-        return line,
+        line_fps.set_data([], [])
+        return line_fps,
 
     def init_frametime():
-        line2.set_data([], [])
-        return line2,
+        line_frametime.set_data([], [])
+        return line_frametime,
 
     def init_combined():
-        line.set_data([], [])
-        line2.set_data([], [])
-        return line, line2,
+        line_combined1.set_data([], [])
+        line_combined2.set_data([], [])
+        return line_combined1, line_combined2,
 
     def animate_fps(i):
-        line.set_data(x.array[:i], y.array[:i])
-        ax.set_xlim(x.array[i] - x.array[60], x.array[i] + x.array[60])
-        return line,
+        line_fps.set_data(x.array[:i], y.array[:i])
+        ax_fps.set_xlim(x.array[i] - x.array[60], x.array[i] + x.array[60])
+        return line_fps,
 
     def animate_frametime(i):
-        line2.set_data(x.array[:i], y2.array[:i])
-        ax.set_xlim(x.array[i] - x.array[60], x.array[i] + x.array[60])
-        return line2,
+        line_frametime.set_data(x.array[:i], y2.array[:i])
+        ax_frametime.set_xlim(x.array[i] - x.array[60], x.array[i] + x.array[60])
+        return line_frametime,
 
     def animate_combined(i):
-        line.set_data(x.array[:i], y.array[:i])
-        line2.set_data(x.array[:i], y2.array[:i])
-        ax.set_xlim(x.array[i] - x.array[60], x.array[i] + x.array[60])
-        return line, line2,
+        line_combined1.set_data(x.array[:i], y.array[:i])
+        line_combined2.set_data(x.array[:i], y2.array[:i])
+        ax_combined.set_xlim(x.array[i] - x.array[60], x.array[i] + x.array[60])
+        return line_combined1, line_combined2,
 
     # This actually plays the animations for each chart we want
     # The program doesn't display the graphs live,
-    # the animations happen in the background
+    # the animations are generated in the background.
     fps_interval = float(100 / 6)
+    # anim_fps = animation.FuncAnimation(
+    #     fig, animate_fps, init_func=init_fps, frames=length, interval=fps_interval, blit=True, save_count=50)
     anim_fps = animation.FuncAnimation(
-        fig, animate_fps, init_func=init_fps, frames=length, interval=fps_interval, blit=True, save_count=50)
+        fig_fps, animate_fps, init_func=init_fps, frames=length, interval=fps_interval, blit=True, save_count=50)
 
     anim_frametime = animation.FuncAnimation(
-        fig, animate_frametime, init_func=init_frametime, frames=length, interval=fps_interval, blit=True, save_count=50)
+        fig_frametime, animate_frametime, init_func=init_frametime, frames=length, interval=fps_interval, blit=True, save_count=50)
 
     anim_combined = animation.FuncAnimation(
-        fig, animate_combined, init_func=init_combined, frames=length, interval=fps_interval, blit=True, save_count=50)
+        fig_combined, animate_combined, init_func=init_combined, frames=length, interval=fps_interval, blit=True, save_count=50)
 
     # Now we save each individual graph as it's own file.
     # We choose which files are saved based on the user's input in the
@@ -229,23 +262,22 @@ def main(args):
     my_path, my_file = os.path.abspath(my_CSV).split(rem)
     if my_path == "":
         my_path, my_file = os.getcwd().split("fps_2_chart.py")
-    tmpList = []
 
     def save_fps(the_file):
         print("Saving FPS Graph to {0}".format(the_file))
-        anim_fps.save(the_file, fps=FPS_median, dpi=50, savefig_kwargs={"transparent": True, "facecolor": "None"}, progress_callback=anim_progress)
+        anim_fps.save(the_file, fps=FPS_median, dpi=args.dpi, savefig_kwargs={"transparent": True, "facecolor": "None"}, progress_callback=anim_progress)
         anim_progress(length, length)
         print("\nDone.\n")
 
     def save_frametime(the_file):
         print("Saving Frame Time Graph to {0}".format(the_file))
-        anim_frametime.save(the_file, fps=FPS_median, dpi=100, savefig_kwargs={"transparent": True, "facecolor": "None"}, progress_callback=anim_progress)
+        anim_frametime.save(the_file, fps=FPS_median, dpi=args.dpi, savefig_kwargs={"transparent": True, "facecolor": "None"}, progress_callback=anim_progress)
         anim_progress(length, length)
         print("\nDone.\n")
 
     def save_combined(the_file):
         print("Saving Combined FPS + Frame Time Graph to {0}".format(the_file))
-        anim_combined.save(the_file, fps=FPS_median, dpi=100, savefig_kwargs={"transparent": True, "facecolor": "None"}, progress_callback=anim_progress)
+        anim_combined.save(the_file, fps=FPS_median, dpi=args.dpi, savefig_kwargs={"transparent": True, "facecolor": "None"}, progress_callback=anim_progress)
         anim_progress(length, length)
         print("\nDone.\n")
 
@@ -287,7 +319,7 @@ def parse_arguments():
     output_help = "Output filename (Default: \"graph\")."
     output_help += "\nDepending on what you generate, the output files will have \"_fps\" or \"_frametime\" or \"_both\" appended to them\n"
     output_help += "(IE: \"graph\" would generate \"graph_fps.mov\")."
-    parser.add_argument("-o", "--output", dest="output", type=str, default="vmaf.mov", help=output_help)
+    parser.add_argument("-o", "--output", dest="output", type=str, default="graph", help=output_help)
 
     interpolation_help = "Choose the interpolation method for the FPS/FrametTime values.\n"
     interpolation_help += "* \"linear\" uses linear interpolation - a straight line will be generated between each point.\n"

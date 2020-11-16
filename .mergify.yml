@@ -1,0 +1,16 @@
+pull_request_rules:
+  - name: "Auto-Merge Security Updates (dependabot[bot])"
+    conditions:
+      - author=dependabot-preview[bot]
+      - status-success=Travis CI - Pull Request
+    actions:
+      merge:
+        method: merge
+
+  - name: "Auto-Merge Security Updates (dependabot-preview[bot])"
+    conditions:
+      - author=dependabot-preview[bot]
+      - status-success=Travis CI - Pull Request
+    actions:
+      merge:
+        method: merge
