@@ -337,7 +337,8 @@ def parse_arguments():
     res_help += "Note that higher values will mean drastically larger files and take substantially longer to encode."
     parser.add_argument("-r", "--resolution", dest="res", type=str, default="1080p", choices=["720p", "1080p", "1440p", "4k"], help=res_help)
 
-    dpi_help = "Choose the positive integer DPI value for the graph image and video (Default is 100).\n"
+    dpi_help = "Choose the DPI value for the graph image and video (Default is 100).\n"
+    dpi_help += "The DPI value must be greater than or equal to 2.\n"
     dpi_help += "Note that higher values will mean drastically larger files and take substantially longer to encode.\n"
     parser.add_argument("-d", "--dpi", dest="dpi", type=int, default="100", help=dpi_help)
 
@@ -346,7 +347,7 @@ def parse_arguments():
 
     args = parser.parse_args()
 
-    if args.dpi <= 0:
+    if args.dpi <= 1:
         parser.error("Value {0} for \"dpi\" argument was not a positive integer.".format(args.dpi))
         exit(1)
 
