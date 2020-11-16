@@ -17,8 +17,11 @@ def anim_progress(cur_frame, total_frames):
     sys.stdout.flush()
 
 
-def should_generate_graph(cur_file):
-    if os.path.isfile(cur_file):
+def should_generate_graph(cur_file, overwrite):
+    if overwrite:
+        print("User sepcified teh overwrite argument, replacing old graphs with new ones.")
+        return True
+    elif os.path.isfile(cur_file):
         overwrite = input(str(cur_file) + " already exists, do you want to generate the graph again? (0 -> No, 1 -> Yes): ")
         if int(overwrite) == 0:
             return False
@@ -29,7 +32,7 @@ def should_generate_graph(cur_file):
         return True
 
 
-def add_steppings(array):
+def add_steppings(array, interp):
     # return array.fillna(method="pad").repeat(60)
 
     array_list = []
@@ -38,82 +41,25 @@ def add_steppings(array):
         array_list.append(item)
         for i in range(59):
             array_list.append(np.nan)
-    new_array = pd.Series(array_list).interpolate(method="akima").fillna(method="pad")
-    return new_array
+    if interp:
+        if interp == "linear":
+            return pd.Series(array_list).interpolate(method="linear").fillna(method="pad")
+        elif interp == "cubic":
+            return pd.Series(array_list).interpolate(method="cubic").fillna(method="pad")
+    else:
+        return pd.Series(array_list).interpolate(method="linear").fillna(method="pad")
 
 
 def main(args):
     my_CSV = None
-    files_to_save = None
-    # If you gave the file as an initial parameter, use it
-    if len(sys.argv) > 1:
-        # Does your CSV file exist?
-        if os.path.isfile(sys.argv[1]):
-            print(str(sys.argv[1]) + " exists.")
-            my_CSV = sys.argv[1]
-        else:
-            print("That CSV file doesn't exist. Are you sure it's there?")
-            exit(1)
+    # Does your CSV file exist?
+    if os.path.isfile(args.GameBench_Report):
+        print(str(args.GameBench_Report) + " exists.")
+        my_CSV = args.GameBench_Report
+    else:
+        print("That CSV file doesn't exist. Are you sure it's there?")
+        exit(1)
 
-        # After the file, you should include a number from 0 to 3
-        # regarding what graphs you want generated
-        # 0 -> FPS
-        # 1 -> Frametime
-        # 2 -> Combined
-        # 3 -> All three graphs
-        # If no number is given, assume 3
-        if len(sys.argv) > 2:
-            try:
-                tmp_val = int(sys.argv[2])
-                if tmp_val == 0:
-                    files_to_save = 0
-                elif tmp_val == 1:
-                    files_to_save = 1
-                elif tmp_val == 2:
-                    files_to_save = 2
-                elif tmp_val == 3:
-                    files_to_save = 3
-                else:
-                    files_to_save = 3
-            except ValueError:
-                print("Non-integer value given for 2nd argument.")
-                exit(2)
-        else:
-            files_to_save = 3
-    else:  # No initial param -> ask for CSV file
-        tmp_CSV = input("Give the explicit path to your CSV file: ")
-        # Does your CSV file exist?
-        if os.path.isfile(tmp_CSV):  # Does your CSV file exist?
-            print(str(tmp_CSV) + " exists.")
-            my_CSV = tmp_CSV
-        else:
-            print("That CSV file doesn't exist. Are you sure it's there?")
-            exit(1)
-
-        try:
-            print("Enter one of the following options for what to print: ")
-            print("0. Create FPS Graph")
-            print("1. Create Frametime Graph")
-            print("2. Create Combined FPS + Frametime Graph")
-            print("3. Create all three graphs")
-            user_input = input("Chose an option: ")
-            tmp_val = int(user_input)
-            if tmp_val == 0:
-                files_to_save = 0
-            elif tmp_val == 1:
-                files_to_save = 1
-            elif tmp_val == 2:
-                files_to_save = 2
-            elif tmp_val == 3:
-                files_to_save = 3
-            else:
-                files_to_save = 3
-        except ValueError:
-            print("Non-integer value given for 2nd argument.")
-            exit(2)
-
-    print("User Choice: " + str(files_to_save))
-    # read the CSV file
     my_file = open(my_CSV, "r")
     data = my_file.read()
 
@@ -156,9 +102,21 @@ def main(args):
     fig.patch.set_alpha(0.)
     # The inch size actually gets tranlated into the resolution
     # So 19.2 x 10.8 -> 1920x1080
-    # Right now it's set to 4k, but it's easily changeable
-    fig.set_size_inches(38.4, 21.6)
-    fig.dpi = 500
+    if args.res:
+        if args.res == "720p":
+            fig.set_size_inches(12.8, 7.2)
+        elif args.res == "1080p":
+            fig.set_size_inches(19.2, 10.8)
+        elif args.res == "1440p":
+            fig.set_size_inches(25.6, 14.4)
+        elif args.res == "4k":
+            fig.set_size_inches(38.4, 21.6)
+    else:
+        fig.set_size_inches(19.2, 10.8)
+    if args.dpi:
+        fig.dpi = args.dpi
+    else:
+        fig.dpi = 100
 
     # Some FPS values can be 0
     # Frame times are calculated as 1000 / FPS value
@@ -181,12 +139,9 @@ def main(args):
     # We can do the same for the Y values, but for now it'll just stay at the
     # same values.
     print("Making equal spacing between X axis values (to simulate 60fps)")
-    # x = add_steppings(x)
-    # y = add_steppings(y)
-    # y2 = add_steppings(y2)
-    x = add_steppings(x)
-    y = add_steppings(y)
-    y2 = add_steppings(y2)
+    x = add_steppings(x, args.interpolation)
+    y = add_steppings(y, args.interpolation)
+    y2 = add_steppings(y2, args.interpolation)
 
     # print("Repeating values to fit 60 FPS video format.")
     # y = np.repeat(y, 60)
@@ -200,14 +155,13 @@ def main(args):
     time_min = y2.min()  # Lowest recorded frametime
     time_max = y2.max()  # Highest recorded frametime
 
-
-    print("# of Frames: " + str(length))
-    print("Minimum FPS: " + str(FPS_min))
-    print("Maximum FPS: " + str(FPS_max))
-    print("Mean FPS: " + str(FPS_mean))
-    print("Median FPS: " + str(FPS_median))
-    print("Minimum Frametime: " + str(time_min) + "ms")
-    print("Maximum Frametime: " + str(time_max) + "ms")
+    print("# of Frames: {0}".format(length))
+    print("Minimum FPS: {0}".format(FPS_min))
+    print("Maximum FPS: {0}".format(FPS_max))
+    print("Mean FPS: {0}".format(FPS_mean))
+    print("Median FPS: {0}".format(FPS_median))
+    print("Minimum Frametime: {0}ms".format(time_min))
+    print("Maximum Frametime: {0}ms".format(time_max))
 
     # Set the range for the Y-axis between 0 and 70
     ax.set_ylim(0, 70)
@@ -257,14 +211,15 @@ def main(args):
     # This actually plays the animations for each chart we want
     # The program doesn't display the graphs live,
     # the animations happen in the background
+    fps_interval = float(100 / 6)
     anim_fps = animation.FuncAnimation(
-        fig, animate_fps, init_func=init_fps, frames=length, interval=float(100 / 6), blit=True, save_count=50)
+        fig, animate_fps, init_func=init_fps, frames=length, interval=fps_interval, blit=True, save_count=50)
 
     anim_frametime = animation.FuncAnimation(
-        fig, animate_frametime, init_func=init_frametime, frames=length, interval=float(100 / 6), blit=True, save_count=50)
+        fig, animate_frametime, init_func=init_frametime, frames=length, interval=fps_interval, blit=True, save_count=50)
 
     anim_combined = animation.FuncAnimation(
-        fig, animate_combined, init_func=init_combined, frames=length, interval=float(100 / 6), blit=True, save_count=50)
+        fig, animate_combined, init_func=init_combined, frames=length, interval=fps_interval, blit=True, save_count=50)
 
     # Now we save each individual graph as it's own file.
     # We choose which files are saved based on the user's input in the
@@ -277,42 +232,51 @@ def main(args):
     tmpList = []
 
     def save_fps(the_file):
-        print("Saving FPS Graph to " + str(my_path) + "anim_fps.mov")
-        anim_fps.save(str(my_path) + "anim_fps.mov", fps=FPS_median, dpi=50, savefig_kwargs={"transparent": True, "facecolor": "None"}, progress_callback=anim_progress)
+        print("Saving FPS Graph to {0}".format(the_file))
+        anim_fps.save(the_file, fps=FPS_median, dpi=50, savefig_kwargs={"transparent": True, "facecolor": "None"}, progress_callback=anim_progress)
         anim_progress(length, length)
         print("\nDone.\n")
 
     def save_frametime(the_file):
-        print("Saving Frame Time Graph to " + str(my_path) + "anim_frametime.mov")
-        anim_frametime.save(str(my_path) + "anim_frametime.mov", fps=FPS_median, dpi=100, savefig_kwargs={"transparent": True, "facecolor": "None"}, progress_callback=anim_progress)
+        print("Saving Frame Time Graph to {0}".format(the_file))
+        anim_frametime.save(the_file, fps=FPS_median, dpi=100, savefig_kwargs={"transparent": True, "facecolor": "None"}, progress_callback=anim_progress)
         anim_progress(length, length)
         print("\nDone.\n")
 
     def save_combined(the_file):
-        print("Saving Combined FPS + Frame Time Graph to " + str(my_path) + "anim_combined.mov")
-        anim_combined.save(str(my_path) + "anim_combined.mov", fps=FPS_median, dpi=100, savefig_kwargs={"transparent": True, "facecolor": "None"}, progress_callback=anim_progress)
+        print("Saving Combined FPS + Frame Time Graph to {0}".format(the_file))
+        anim_combined.save(the_file, fps=FPS_median, dpi=100, savefig_kwargs={"transparent": True, "facecolor": "None"}, progress_callback=anim_progress)
         anim_progress(length, length)
         print("\nDone.\n")
 
-    file_fps = str(my_path) + "anim_fps.mov"
-    file_frametime = str(my_path) + "anim_frametime.mov"
-    file_combined = str(my_path) + "anim_combined.mov"
-    if files_to_save == 0:
-        if should_generate_graph(file_fps):
+    file_fps = ""
+    file_frametime = ""
+    file_combined = ""
+    if args.output:
+        file_fps = "{0}{1}_fps.mov".format(my_path,args.output)
+        file_frametime = "{0}{1}_frametime.mov".format(my_path,args.output)
+        file_combined = "{0}{1}_combined.mov".format(my_path,args.output)
+    else:
+        file_fps = "{0}anim_fps.mov".format(my_path)
+        file_frametime = "{0}anim_frametime.mov".format(my_path)
+        file_combined = "{0}anim_combined.mov".format(my_path)
+
+    if args.type == "fps":
+        if should_generate_graph(file_fps, args.overwrite):
             save_fps(file_fps)
-    elif files_to_save == 1:
-        if should_generate_graph(file_frametime):
+    elif args.type == "frametime":
+        if should_generate_graph(file_frametime, args.overwrite):
             save_frametime(file_frametime)
-    elif files_to_save == 2:
-        if should_generate_graph(file_combined):
+    elif args.type == "both":
+        if should_generate_graph(file_combined, args.overwrite):
             save_combined(file_combined)
-    elif files_to_save == 3:
-        print("Saving all three files to " + str(my_path))
-        if should_generate_graph(str(my_path) + "anim_fps.mov"):
+    elif args.type == "default":
+        print("Saving all three files to {0}".format(my_path))
+        if should_generate_graph(file_fps, args.overwrite):
             save_fps(file_fps)
-        if should_generate_graph(str(my_path) + "anim_frametime.mov"):
+        if should_generate_graph(file_frametime, args.overwrite):
             save_frametime(file_frametime)
-        if should_generate_graph(str(my_path) + "anim_combined.mov"):
+        if should_generate_graph(file_combined, args.overwrite):
             save_frametime(file_frametime)
 
 def parse_arguments():
@@ -320,38 +284,39 @@ def parse_arguments():
     parser = argp.ArgumentParser(description=main_help, formatter_class=argp.RawTextHelpFormatter)
     parser.add_argument("GameBench_Report", type=str, help="GameBench CSV report file.")
 
-    o_help = "Output filename (Default: vmaf.png).\nAlso defines the name of the output graph (Default: vmaf.mov)."
-    parser.add_argument("-o", "--output", dest="output", type=str, default="vmaf.png", help=o_help)
+    output_help = "Output filename (Default: \"graph\")."
+    output_help += "\nDepending on what you generate, the output files will have \"_fps\" or \"_frametime\" or \"_both\" appended to them\n"
+    output_help += "(IE: \"graph\" would generate \"graph_fps.mov\")."
+    parser.add_argument("-o", "--output", dest="output", type=str, default="vmaf.mov", help=output_help)
 
-    l_help = "Choose what the lowest value of the graph will be.\n"
-    l_help += "* \"default\" uses the lowest VMAF value minus 5  as the lowest point of the y-axis so the values aren't so stretched vertically.\n"
-    l_help += "* \"min\" will use whatever the lowest VMAF value is as the lowest point of the y-axis. Makes the data look a bit stretched vertically.\n"
-    l_help += "* \"zero\" will explicitly use 0 as the lowest point on the y-axis. Makes the data look a bit compressed vertically.\n"
-    l_help += "* \"custom\" will use the value entered by the user in the \"-c\" / \"--custom\" option."
-    parser.add_argument("-l", "--lower-boundary", dest="low", type=str, default="default", choices=["default", "min", "zero", "custom"], help=l_help)
+    interpolation_help = "Choose the interpolation method for the FPS/FrametTime values.\n"
+    interpolation_help += "* \"linear\" uses linear interpolation - a straight line will be generated between each point.\n"
+    interpolation_help += "* \"cubic\" uses cubic interpolation. This tries to create smooth curves between points.\n"
+    parser.add_argument("-i", "--interp", dest="interpolation", type=str, default="linear", choices=["linear", "cubic"], help=interpolation_help)
 
-    custom_help = "Enter custom minimum point for y-axis. Requires \"-l\" / \"--lower-boundary\" set to \"custom\" to work.\nThis option expects an integer value."
-    parser.add_argument("-c", "--custom", dest="custom", type=int, help=custom_help)
+    type_help = "Choose the what output video graph files to generate.\n"
+    type_help += "* \"default\" will generate all three graphs - FPS, Frame Time, and FPS + Frame Time combined.\n"
+    type_help += "* \"fps\" will only generate the FPS video graph.\n"
+    type_help += "* \"frametime\" will only generate the Frame Time video graph.\n"
+    type_help += "* \"both\" will only generate the combined FPS + Frame Time video graph.\n"
+    parser.add_argument("-t", "--type", dest="type", type=str, default="default", choices=["default", "fps", "frametime", "both"], help=type_help)
 
     res_help = "Choose the resolution for the graph video (Default is 1080p).\n"
     res_help += "Note that higher values will mean drastically larger files and take substantially longer to encode."
     parser.add_argument("-r", "--resolution", dest="res", type=str, default="1080p", choices=["720p", "1080p", "1440p", "4k"], help=res_help)
 
-    dpi_help = "Choose the DPI for the graph image and video (Default is 100).\n"
+    dpi_help = "Choose the positive integer DPI value for the graph image and video (Default is 100).\n"
     dpi_help += "Note that higher values will mean drastically larger files and take substantially longer to encode.\n"
-    dpi_help += "This setting applies only to the video file, not the image file."
-    parser.add_argument("-d", "--dpi", dest="dpi", type=float, default="100", help=dpi_help)
+    parser.add_argument("-d", "--dpi", dest="dpi", type=int, default="100", help=dpi_help)
+
+    overwrite_help = "Use this flag to overwrite any existing files that have the same output name as the one set by the \"-o\" argument."
+    parser.add_argument("-w", "--overwrite", dest="overwrite", action="store_true", help=overwrite_help)
 
     args = parser.parse_args()
 
-    if args.low == "custom":
-        try:
-            if args.custom < 0 or args.custom > 100:
-                parser.error("Value {0} for \"custom\" argument was not in the valid range of 0 to 100.".format(float(args.custom)))
-                exit()
-        except ValueError as ve:
-            print(ve)
-            exit()
+    if args.dpi <= 0:
+        parser.error("Value {0} for \"dpi\" argument was not a positive integer.".format(args.dpi))
+        exit(1)
 
     return(args)
 
