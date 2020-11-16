@@ -1,7 +1,6 @@
 from io import StringIO
 from matplotlib import animation
 import matplotlib.pyplot as plt
-from numpy import inf
 import argparse as argp
 import pandas as pd
 import numpy as np
@@ -171,8 +170,8 @@ def main(args):
     with np.errstate(divide="ignore", invalid="ignore"):
         # y2 = np.asarray(1000 / df["FPS_value"])
         y2 = pd.Series(1000 / df["FPS_value"])
-    y2[y2 == inf] = 0
-    y2[y2 == -inf] = 0
+    y2[y2 == np.Inf] = 0
+    y2[y2 == np.NINF] = 0
 
     # Since we only get FPS values roughly every second, rather than multiple
     # times a second, we'll be repeating values to smooth out the graph for 60
