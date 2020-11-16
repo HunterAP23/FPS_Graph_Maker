@@ -19,7 +19,7 @@ def anim_progress(cur_frame, total_frames):
 
 def should_generate_graph(cur_file, overwrite):
     if overwrite:
-        print("User sepcified teh overwrite argument, replacing old graphs with new ones.")
+        print("User sepcified the overwrite argument, replacing old graphs with new ones.")
         return True
     elif os.path.isfile(cur_file):
         overwrite = input(str(cur_file) + " already exists, do you want to generate the graph again? (0 -> No, 1 -> Yes): ")
@@ -277,7 +277,7 @@ def main(args):
         if should_generate_graph(file_frametime, args.overwrite):
             save_frametime(file_frametime)
         if should_generate_graph(file_combined, args.overwrite):
-            save_frametime(file_frametime)
+            save_combined(file_combined)
 
 def parse_arguments():
     main_help = "Plot GameBench report to to a live video graph.\n"
