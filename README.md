@@ -8,26 +8,59 @@ or alternatively run the following command:
 ```
 pip install -r requirements.txt
 ```
+or:
+```
+python -m pip install -r requirements.txt
+```
+
+If you use the `pipenv` module, you can create a virtual environment with the
+following command:
+```
+pipenv update
+```
+or:
+```
+python -m pipenv update
+```
 
 # Usage
-Run from the command line.
+You can use the help command to get a list of available options with the
+following command:
+```
+python fps_2_chart.py -h
+```
 
-You can either include the name of the CSV file as an initial parameter,
-otherwise the program will ask you to enter it manually.
-The program will automatically save animated graphs and exported PNG's to the
-same folder that the CSV's were provided from, given that the user input the CSV
-with either relative or absolute paths from the command line window.
-Otherwise, the animated graph videos and the exported PNG's will be saved to
-the folder where fps_2_chart.py is located.
+Here is what that output looks like:
+```
+usage: fps_2_chart.py [-h] [-o OUTPUT] [-i {linear,cubic}] [-t {default,fps,frametime,both}] [-r {720p,1080p,1440p,4k}] [-d DPI] [-w]
+                      GameBench_Report
 
-If you include the CSV file as a parameter, you can also enter a number
-from 0 - 3 to specify what graphs you want generated:
-  * 0 -> FPS
-  * 1 -> Frametime
-  * 2 -> Combined
-  * 3 -> All three graphs
-  * If no number is given, assume 3
+Plot GameBench report to to a live video graph.
 
-After the initial creation of the graph(s), the program will then use FFmpeg
-to export each frame as a PNG into a newly created subfolder
-in the program's main folder.
+positional arguments:
+  GameBench_Report      GameBench CSV report file.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o OUTPUT, --output OUTPUT
+                        Output filename (Default: "graph").
+                        Depending on what you generate, the output files will have "_fps" or "_frametime" or "_both" appended to them
+                        (IE: "graph" would generate "graph_fps.mov").
+  -i {linear,cubic}, --interp {linear,cubic}
+                        Choose the interpolation method for the FPS/FrametTime values.
+                        * "linear" uses linear interpolation - a straight line will be generated between each point.
+                        * "cubic" uses cubic interpolation. This tries to create smooth curves between points.
+  -t {default,fps,frametime,both}, --type {default,fps,frametime,both}
+                        Choose the what output video graph files to generate.
+                        * "default" will generate all three graphs - FPS, Frame Time, and FPS + Frame Time combined.
+                        * "fps" will only generate the FPS video graph.
+                        * "frametime" will only generate the Frame Time video graph.
+                        * "both" will only generate the combined FPS + Frame Time video graph.
+  -r {720p,1080p,1440p,4k}, --resolution {720p,1080p,1440p,4k}
+                        Choose the resolution for the graph video (Default is 1080p).
+                        Note that higher values will mean drastically larger files and take substantially longer to encode.
+  -d DPI, --dpi DPI     Choose the DPI value for the graph image and video (Default is 100).
+                        The DPI value must be greater than or equal to 2.
+                        Note that higher values will mean drastically larger files and take substantially longer to encode.
+  -w, --overwrite       Use this flag to overwrite any existing files that have the same output name as the one set by the "-o" argument.
+```
