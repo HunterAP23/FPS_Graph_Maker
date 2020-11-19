@@ -131,3 +131,6 @@ dmypy.json
 # Video files
 *.mov
 *.webm
+
+# pipenv files
+# Pipfile.lock
