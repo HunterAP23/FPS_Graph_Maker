@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1737</width>
+    <height>1221</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>GameBench Graph Maker</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QPushButton" name="pushButton">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>-220</x>
+      <y>200</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+   </widget>
+   <widget class="QGroupBox" name="inputSelectionGroupBox">
+    <property name="geometry">
+     <rect>
+      <x>498</x>
+      <y>250</y>
+      <width>751</width>
+      <height>441</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Input Selection</string>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_5">
+     <item>
+      <widget class="QTableView" name="inputTableView"/>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="inputButtonsHorizontalLayout">
+       <item>
+        <widget class="QPushButton" name="inputSelectFileButton">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>Select File</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="inputSelectFolderButton">
+         <property name="text">
+          <string>Select Folder</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="inputDeleteSelectedButton">
+         <property name="text">
+          <string>Delete Selected</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="inputClearAllButton">
+         <property name="text">
+          <string>Clear All</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string>Output Selection</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_35">
+        <item>
+         <layout class="QHBoxLayout" name="outputHorizontalLayout">
+          <item>
+           <widget class="QLabel" name="outputLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>63</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Output</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="outputLineEdit"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="outputSelectFileButton">
+            <property name="text">
+             <string>Select File</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="outputSelectFolderButton">
+            <property name="text">
+             <string>Select Folder</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="outputFileNameFormatStringHorizontalLayout">
+          <item>
+           <widget class="QLabel" name="outputFileNameFormatStringLabel">
+            <property name="minimumSize">
+             <size>
+              <width>63</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Output File Name Format String</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="outputFileNameFormatStringLineEdit">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Format string used to generate output file name(s).&lt;/p&gt;&lt;p&gt;For example, if the input is &amp;quot;sample.mp4&amp;quot;, and the format string is &amp;quot;{original_file_name}_output{extension}&amp;quot;, then the output file name will be &amp;quot;sample_output.mp4&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>{original_file_name}_output{extension}</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="framePreviewGroupBox">
+          <property name="title">
+           <string>Frame Preview</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_14">
+           <item>
+            <layout class="QHBoxLayout" name="framPreviewHorizontalLayout">
+             <item>
+              <layout class="QVBoxLayout" name="framePreviewOptionsVerticalLayout">
+               <item>
+                <widget class="QLabel" name="framePreviewLabel">
+                 <property name="frameShape">
+                  <enum>QFrame::StyledPanel</enum>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="scaledContents">
+                  <bool>false</bool>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="framePreviewShowPreviewCheckBox">
+                 <property name="text">
+                  <string>Show Preview</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="framePreviewKeepAspectRatioCheckBox">
+                 <property name="text">
+                  <string>Keep Aspect Ratio</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,15 +1,16 @@
-from io import StringIO
-from matplotlib import animation
-import matplotlib.pyplot as plt
 import argparse as argp
 import copy
-import pandas as pd
-import numpy as np
-import shlex
+from io import StringIO
 import math
+import os
+import shlex
 import statistics
 import sys
-import os
+
+from matplotlib import animation
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 
 def anim_progress(cur_frame, total_frames):
