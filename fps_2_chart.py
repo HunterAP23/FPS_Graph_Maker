@@ -1,10 +1,6 @@
 import argparse as argp
-import copy
 from io import StringIO
-import math
 import os
-import shlex
-import statistics
 import sys
 
 from matplotlib import animation
@@ -39,7 +35,6 @@ def add_steppings(array, interp):
 
     array_list = []
     for item in array:
-        tmp_list = []
         array_list.append(item)
         for i in range(59):
             array_list.append(np.nan)
@@ -89,9 +84,9 @@ def main(args):
 
     # set the all the plot params
     plt.rcParams.update({
-        "figure.facecolor":  (0.0, 0.0, 0.0, 0.0),
-        "figure.edgecolor":  "black",
-        "axes.facecolor":    (0.0, 0.0, 0.0, 0.0),
+        "figure.facecolor": (0.0, 0.0, 0.0, 0.0),
+        "figure.edgecolor": "black",
+        "axes.facecolor": (0.0, 0.0, 0.0, 0.0),
         "savefig.facecolor": (0.0, 0.0, 0.0, 0.0),
         "legend.facecolor": (0.0, 0.0, 0.0, 0.0),
         "legend.edgecolor": "black",
@@ -99,7 +94,7 @@ def main(args):
         "savefig.transparent": True,
         "animation.codec": "qtrle",
         "font.size": 26,
-        })
+    })
     # fig, ax = plt.subplots()
     fig_fps = plt.figure(1)
     fig_frametime = plt.figure(2)
@@ -172,8 +167,8 @@ def main(args):
     length = len(x)  # Total count of frames
     FPS_min = y.min()  # Lowest recorded FPS value
     FPS_max = y.max()  # Highest recorded FPS value
-    FPS_mean = y.mean() # Average FPS
-    FPS_median = y.median() # Median FPS
+    FPS_mean = y.mean()  # Average FPS
+    FPS_median = y.median()  # Median FPS
     time_min = y2.min()  # Lowest recorded frametime
     time_max = y2.max()  # Highest recorded frametime
 
@@ -286,9 +281,9 @@ def main(args):
     file_frametime = ""
     file_combined = ""
     if args.output:
-        file_fps = "{0}{1}_fps.mov".format(my_path,args.output)
-        file_frametime = "{0}{1}_frametime.mov".format(my_path,args.output)
-        file_combined = "{0}{1}_combined.mov".format(my_path,args.output)
+        file_fps = "{0}{1}_fps.mov".format(my_path, args.output)
+        file_frametime = "{0}{1}_frametime.mov".format(my_path, args.output)
+        file_combined = "{0}{1}_combined.mov".format(my_path, args.output)
     else:
         file_fps = "{0}anim_fps.mov".format(my_path)
         file_frametime = "{0}anim_frametime.mov".format(my_path)
@@ -311,6 +306,7 @@ def main(args):
             save_frametime(file_frametime)
         if should_generate_graph(file_combined, args.overwrite):
             save_combined(file_combined)
+
 
 def parse_arguments():
     main_help = "Plot GameBench report to to a live video graph.\n"
