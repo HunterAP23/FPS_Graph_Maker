@@ -5,8 +5,8 @@ from datetime import datetime as dt
 from io import StringIO
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from gooey import Gooey, GooeyParser
@@ -15,55 +15,77 @@ from matplotlib import animation
 
 def anim_progress(cur_frame, total_frames):
     percent = "{0:.2f}".format(cur_frame * 100 / total_frames).zfill(5)
-    print("Saving frame {0} out of {1} : {2}%".format(str(cur_frame), str(total_frames), percent))
-    # sys.stdout.write(
-    #     "\rSaving frame {0} out of {1} : {2}%".format(
-    #         str(cur_frame), str(total_frames), percent
-    #     )
-    # )
+    print(
+        "Saving frame {0} out of {1} : {2}%".format(
+            str(cur_frame), str(total_frames), percent
+        )
+    )
     sys.stdout.flush()
 
 
-def should_generate_graph(cur_file, overwrite):
-    if overwrite:
-        print(
-            "User specified the overwrite argument, replacing old graphs with new ones."
+def animate(plots, length, x, y, y2, interval, args):
+    for plts in plots.keys():
+        t = 0
+        shown = 0
+
+        def init():
+            if "line" in plots[plts].keys():
+                plots[plts]["line"].set_data([], [])
+                return (plots[plts]["line"],)
+            else:
+                plots[plts]["line1"].set_data([], [])
+                plots[plts]["line2"].set_data([], [])
+                return (
+                    plots[plts]["line1"],
+                    plots[plts]["line2"],
+                )
+
+        def anim(i):
+            nonlocal t, shown
+            t += interval
+            if shown < len(x.array) and t >= x.array[shown]:
+                shown += 1
+            if "line" in plots[plts].keys():
+                plots[plts]["line"].set_data(x.array[:shown], y.array[:shown])
+            else:
+                plots[plts]["line1"].set_data(x.array[:shown], y.array[:shown])
+                plots[plts]["line2"].set_data(x.array[:shown], y2.array[:shown])
+            plots[plts]["ax"].set_xlim(
+                x.array[i] - x.array[60], x.array[i] + x.array[60]
+            )
+            if "line" in plots[plts].keys():
+                return (plots[plts]["line"],)
+            else:
+                return (
+                    plots[plts]["line1"],
+                    plots[plts]["line2"],
+                )
+
+        anim_func = animation.FuncAnimation(
+            plots[plts]["figure"],
+            anim,
+            init_func=init,
+            frames=length,
+            interval=interval,
+            blit=True,
+            save_count=50,
         )
-        return True
-    elif os.path.isfile(cur_file):
-        # overwrite = input(
-        #     str(cur_file)
-        #     + " already exists, do you want to generate the graph again? (0 -> No, 1 -> Yes): "
-        # )
-        # if int(overwrite) == 0:
-        #     return False
-        # else:
-        #     return True
-        return True
-    else:
-        print(str(cur_file) + " does not exist, generating.")
-        return True
 
-
-# def add_steppings(array, interp):
-#     # return array.fillna(method="pad").repeat(60)
-
-#     array_list = []
-#     for item in array:
-#         array_list.append(item)
-#         for i in range(59):
-#             array_list.append(np.nan)
-#     if interp:
-#         if interp == "linear":
-#             return (
-#                 pd.Series(array_list).interpolate(method="linear").fillna(method="pad")
-#             )
-#         elif interp == "cubic":
-#             return (
-#                 pd.Series(array_list).interpolate(method="cubic").fillna(method="pad")
-#             )
-#     else:
-#         return pd.Series(array_list).interpolate(method="linear").fillna(method="pad")
+        if (
+            (plts == "FPS" and args.export_fps)
+            or (plts == "Frametime" and args.export_frametime)
+            or (plts == "Combined" and args.export_combined)
+        ):
+            print("Saving {0} Graph to {1}".format(plt, plots[plts]["filename"]))
+            anim_func.save(
+                plots[plts]["filename"],
+                fps=60,
+                dpi=args.dpi,
+                savefig_kwargs={"transparent": True, "facecolor": "None"},
+                progress_callback=anim_progress,
+            )
+            anim_progress(length, length)
+            print("\nDone.\n")
 
 
 def main(args):
@@ -164,46 +186,37 @@ def main(args):
             "font.size": 26,
         }
     )
-    # fig, ax = plt.subplots()
-    fig_fps = plt.figure(1)
-    fig_frametime = plt.figure(2)
-    fig_combined = plt.figure(3)
 
-    fig_fps.patch.set_alpha(0.0)
-    fig_frametime.patch.set_alpha(0.0)
-    fig_combined.patch.set_alpha(0.0)
-    # The inch size actually gets tranlated into the resolution
-    # So 19.2 x 10.8 -> 1920x1080
-    if args.resolution:
-        if args.resolution == "720p":
-            fig_fps.set_size_inches(12.8, 7.2)
-            fig_frametime.set_size_inches(12.8, 7.2)
-            fig_combined.set_size_inches(12.8, 7.2)
-        elif args.resolution == "1080p":
-            fig_fps.set_size_inches(19.2, 10.8)
-            fig_frametime.set_size_inches(12.8, 7.2)
-            fig_combined.set_size_inches(12.8, 7.2)
-        elif args.resolution == "1440p":
-            fig_fps.set_size_inches(25.6, 14.4)
-            fig_frametime.set_size_inches(12.8, 7.2)
-            fig_combined.set_size_inches(12.8, 7.2)
-        elif args.resolution == "4k":
-            fig_fps.set_size_inches(38.4, 21.6)
-            fig_frametime.set_size_inches(12.8, 7.2)
-            fig_combined.set_size_inches(12.8, 7.2)
-    else:
-        fig_fps.set_size_inches(19.2, 10.8)
-        fig_frametime.set_size_inches(12.8, 7.2)
-        fig_combined.set_size_inches(12.8, 7.2)
+    plotters = dict()
+    if args.export_fps:
+        plotters["FPS"] = {"figure": plt.figure(1)}
+    if args.export_frametime:
+        plotters["Frametime"] = {"figure": plt.figure(2)}
+    if args.export_combined:
+        plotters["Combined"] = {"figure": plt.figure(3)}
 
-    if args.dpi:
-        fig_fps.dpi = args.dpi
-        fig_frametime.dpi = args.dpi
-        fig_combined.dpi = args.dpi
-    else:
-        fig_fps.dpi = 100
-        fig_frametime.dpi = 100
-        fig_combined.dpi = 100
+    for key, plts in plotters.items():
+        plts["figure"].patch.set_alpha(0.0)
+        # The inch size actually gets tranlated into the resolution
+        # So 19.2 x 10.8 -> 1920x1080
+        if args.resolution:
+            if args.resolution == "720p":
+                plts["figure"].set_size_inches(12.8, 7.2)
+            elif args.resolution == "1080p":
+                plts["figure"].set_size_inches(19.2, 10.8)
+            elif args.resolution == "1440p":
+                plts["figure"].set_size_inches(25.6, 14.4)
+            elif args.resolution == "4k":
+                plts["figure"].set_size_inches(38.4, 21.6)
+        else:
+            plts["figure"].set_size_inches(19.2, 10.8)
+
+        if args.dpi:
+            plts["figure"].dpi = args.dpi
+        else:
+            plts["figure"].dpi = 100
+
+        plts["ax"] = plts["figure"].subplots()
 
     # Some FPS values can be 0
     # Frame times are calculated as 1000 / FPS value
@@ -213,179 +226,77 @@ def main(args):
     # values, so we have to replace them with 0 so the graph doesn't freak out
     print("Removing inf frame-time values from doing division-by-zero.")
     with np.errstate(divide="ignore", invalid="ignore"):
-        # y2 = np.asarray(1000 / df["FPS_value"])
         y2 = pd.Series(1000 / df["framerate"])
     y2[y2 == np.Inf] = 0
     y2[y2 == np.NINF] = 0
 
-    # print("X:")
-    # print(x.to_string())
-    # print("\nY:")
-    # y.to_csv("y_test.csv")
-    # print("\nY2:")
-    # print(y2.to_string())
-    # exit()
-
-    # Since we only get FPS values roughly every second, rather than multiple
-    # times a second, we'll be repeating values to smooth out the graph for 60
-    # FPS playback.
-    # For the X axis, we'll have this program make 60 steps for get from one
-    # x value to the next.
-    # We can do the same for the Y values, but for now it'll just stay at the
-    # same values.
-    # print("Making equal spacing between X axis values.")
-    FPS_min = y.min()  # Lowest recorded FPS value
-    FPS_max = y.max()  # Highest recorded FPS value
-    FPS_mean = y.mean()  # Average FPS
-    FPS_median = y.median()  # Median FPS
-    time_min = y2.min()  # Lowest recorded frametime
-    time_max = y2.max()  # Highest recorded frametime
-
-    # x = add_steppings(x, args.interpolation)
-    # y = add_steppings(y, args.interpolation)
-    # y2 = add_steppings(y2, args.interpolation)
-
-    # print("Repeating values to fit 60 FPS video format.")
-    # y = np.repeat(y, 60)
-    # y2 = np.repeat(y2, 60)
-
     length = len(x)  # Total count of frames
-    # FPS_min = y.min()  # Lowest recorded FPS value
-    # FPS_max = y.max()  # Highest recorded FPS value
-    # FPS_mean = y.mean()  # Average FPS
-    # FPS_median = y.median()  # Median FPS
-    # time_min = y2.min()  # Lowest recorded frametime
-    # time_max = y2.max()  # Highest recorded frametime
+    fps_min = y.min()  # Lowest recorded FPS value
+    fps_max = y.max()  # Highest recorded FPS value
+    fps_mean = y.mean()  # Average FPS
+    fps_median = y.median()  # Median FPS
+    if "FPS" in plotters.keys():
+        plotters["FPS"]["Minimum"] = fps_min
+        plotters["FPS"]["Maximum"] = fps_max
+        plotters["FPS"]["Mean"] = fps_mean
+        plotters["FPS"]["Median"] = fps_median
+
+    frametime_min = y2.min()  # Lowest recorded frametime
+    frametime_max = y2.max()  # Highest recorded frametime
+    frametime_mean = y2.mean()  # Average frametime
+    frametime_median = y2.median()  # Median frametime
+    if "Frametime" in plotters.keys():
+        plotters["Frametime"]["Minimum"] = frametime_min
+        plotters["Frametime"]["Maximum"] = frametime_max
+        plotters["Frametime"]["Mean"] = frametime_mean
+        plotters["Frametime"]["Median"] = frametime_median
 
     print("# of Frames: {0}".format(length))
-    print("Minimum FPS: {0}".format(FPS_min))
-    print("Maximum FPS: {0}".format(FPS_max))
-    print("Mean FPS: {0}".format(FPS_mean))
-    print("Median FPS: {0}".format(FPS_median))
-    print("Minimum Frametime: {0}ms".format(time_min))
-    print("Maximum Frametime: {0}ms".format(time_max))
+    print("Minimum FPS: {0}".format(fps_min))
+    print("Maximum FPS: {0}".format(fps_max))
+    print("Mean FPS: {0}".format(fps_mean))
+    print("Median FPS: {0}".format(fps_median))
+    print("Minimum Frametime: {0}ms".format(frametime_min))
+    print("Maximum Frametime: {0}ms".format(frametime_max))
+    print("Mean Frametime: {0}ms".format(frametime_mean))
+    print("Median Frametime: {0}ms".format(frametime_median))
 
-    ax_fps = fig_fps.subplots()
-    ax_frametime = fig_frametime.subplots()
-    ax_combined = fig_combined.subplots()
+    # y_index = pd.Series(y.index)
+    # y_val_new = []
+    # y_idx_new = []
+    # i = 0
+    # for y_val, y_idx, diff in zip(y, y_index, y_index.diff()):
+    #     y_idx_new.append(y_idx)
+    #     y_val_new.append(y_val)
+    #     if diff > frametime_min / 1000:
+    #         # print("diff is {}".format(diff))
+    #         # print("min frametime is: {}".format(frametime_min / 2000))
+    #         # exit()
+    #         mul = (diff / (frametime_min / 1000)) - 1
+    #         for i in range(round(mul)):
+    #             y_idx_new.append(np.nan)
+    #             y_val_new.append(np.nan)
 
-    # Set the range for the Y-axis between 0 and FPS_max * 1.1
-    ax_fps.set_ylim(0, FPS_max * 1.1)
-    ax_frametime.set_ylim(0, time_max * 1.1)
-    ax_combined.set_ylim(0, FPS_max * 1.1)
-    # Set the range for the initial X-axis
-    # ax_fps.set_xlim(x.array[0] - x.array[60], x.array[60])
-    # ax_frametime.set_xlim(x.array[0] - x.array[60], x.array[60])
-    # ax_combined.set_xlim(x.array[0] - x.array[60], x.array[60])
-    # ax_fps.set_xlim(x.array[0], x.array[60])
-    ax_frametime.set_xlim(x.array[0], x.array[60])
-    ax_combined.set_xlim(x.array[0], x.array[60])
+    # y = pd.Series(
+    #     data=pd.Series(y_val_new).interpolate(method="cubic"),
+    #     index=pd.Series(y_idx_new).interpolate(method="cubic")
+    # )
+    # x = pd.Series(y.index)
+    # length = len(x)
 
-    # Remove the X-axis ticks
-    ax_fps.set_xticklabels([])
-    ax_frametime.set_xticklabels([])
-    ax_combined.set_xticklabels([])
+    # Set the range for the Y-axis between 0 and item's max * 1.1
+    if "FPS" in plotters.keys():
+        plotters["FPS"]["ax"].set_ylim(0, fps_max * 1.1)
+    if "Frametime" in plotters.keys():
+        plotters["Frametime"]["ax"].set_ylim(0, frametime_max * 1.1)
+    if "Combined" in plotters.keys():
+        plotters["Combined"]["ax"].set_ylim(0, fps_max * 1.1)
 
-    (line_fps,) = ax_fps.plot(x, y, "b")
-    (line_frametime,) = ax_frametime.plot(x, y2, "r")
-    (line_combined1,) = ax_combined.plot(x, y, "b")
-    (line_combined2,) = ax_combined.plot(x, y2, "r")
-
-    # Misc functions needed for the graphs
-    # Ones with _fps are just for the FPS graph
-    # Others with _frametime are just for the frametime
-    # The ones with _combined are for both FPS + frametime in one chart
-    def init_fps():
-        line_fps.set_data([], [])
-        return (line_fps,)
-
-    def init_frametime():
-        line_frametime.set_data([], [])
-        return (line_frametime,)
-
-    def init_combined():
-        line_combined1.set_data([], [])
-        line_combined2.set_data([], [])
-        return (
-            line_combined1,
-            line_combined2,
-        )
-
-    # This actually plays the animations for each chart we want
-    # The program doesn't display the graphs live,
-    # the animations are generated in the background.
-    fps_interval = float(100 / 6)
-    fps_t = 0
-    fps_shown = 0
-
-    def animate_fps(i):
-        nonlocal fps_t, fps_shown
-        fps_t += fps_interval
-        if fps_shown < len(x.array) and fps_t >= x.array[fps_shown]:
-            fps_shown += 1
-        line_fps.set_data(x.array[:fps_shown], y.array[:fps_shown])
-        ax_fps.set_xlim(x.array[i] - x.array[60], x.array[i] + x.array[60])
-        return (line_fps,)
-
-    frametime_t = 0
-    frametime_shown = 0
-
-    def animate_frametime(i):
-        nonlocal frametime_t, frametime_shown
-        frametime_t += fps_interval
-        if frametime_shown < len(x.array) and frametime_t >= x.array[frametime_shown]:
-            frametime_shown += 1
-        line_frametime.set_data(x.array[:frametime_shown], y2.array[:frametime_shown])
-        ax_frametime.set_xlim(x.array[i] - x.array[60], x.array[i] + x.array[60])
-        return (line_frametime,)
-
-    combined_t = 0
-    combined_shown = 0
-
-    def animate_combined(i):
-        nonlocal combined_t, combined_shown
-        combined_t += fps_interval
-        if combined_shown < len(x.array) and combined_t >= x.array[combined_shown]:
-            combined_shown += 1
-        line_combined1.set_data(x.array[:combined_shown], y.array[:combined_shown])
-        line_combined2.set_data(x.array[:combined_shown], y2.array[:combined_shown])
-        ax_combined.set_xlim(x.array[i] - x.array[60], x.array[i] + x.array[60])
-        return (
-            line_combined1,
-            line_combined2,
-        )
-
-    # anim_fps = animation.FuncAnimation(
-    #     fig, animate_fps, init_func=init_fps, frames=length, interval=fps_interval, blit=True, save_count=50)
-    anim_fps = animation.FuncAnimation(
-        fig_fps,
-        animate_fps,
-        init_func=init_fps,
-        frames=length,
-        interval=fps_interval,
-        blit=True,
-        save_count=50,
-    )
-
-    anim_frametime = animation.FuncAnimation(
-        fig_frametime,
-        animate_frametime,
-        init_func=init_frametime,
-        frames=length,
-        interval=fps_interval,
-        blit=True,
-        save_count=50,
-    )
-
-    anim_combined = animation.FuncAnimation(
-        fig_combined,
-        animate_combined,
-        init_func=init_combined,
-        frames=length,
-        interval=fps_interval,
-        blit=True,
-        save_count=50,
-    )
+    for key, plts in plotters.items():
+        # Set the range for the initial X-axis
+        plts["ax"].set_xlim(x.array[0], x.array[60])
+        # Remove the X-axis ticks
+        plts["ax"].set_xticklabels([])
 
     # Now we save each individual graph as it's own file.
     # We choose which files are saved based on the user's input in the
@@ -396,72 +307,51 @@ def main(args):
     if my_path == "":
         my_path, my_file = os.getcwd().split("fps_2_chart.py")
 
-    def save_fps(the_file):
-        print("Saving FPS Graph to {0}".format(the_file))
-        anim_fps.save(
-            the_file,
-            fps=60,
-            dpi=args.dpi,
-            savefig_kwargs={"transparent": True, "facecolor": "None"},
-            progress_callback=anim_progress,
-        )
-        anim_progress(length, length)
-        print("\nDone.\n")
-
-    def save_frametime(the_file):
-        print("Saving Frame Time Graph to {0}".format(the_file))
-        anim_frametime.save(
-            the_file,
-            fps=60,
-            dpi=args.dpi,
-            savefig_kwargs={"transparent": True, "facecolor": "None"},
-            progress_callback=anim_progress,
-        )
-        anim_progress(length, length)
-        print("\nDone.\n")
-
-    def save_combined(the_file):
-        print("Saving Combined FPS + Frame Time Graph to {0}".format(the_file))
-        anim_combined.save(
-            the_file,
-            fps=60,
-            dpi=args.dpi,
-            savefig_kwargs={"transparent": True, "facecolor": "None"},
-            progress_callback=anim_progress,
-        )
-        anim_progress(length, length)
-        print("\nDone.\n")
-
-    file_fps = ""
-    file_frametime = ""
-    file_combined = ""
     if args.output:
         output_new = ".".join(args.output.split(".")[:-1])
-        file_fps = "{0}_fps.mov".format(output_new)
-        file_frametime = "{0}_frametime.mov".format(output_new)
-        file_combined = "{0}_combined.mov".format(output_new)
+        if args.export_fps:
+            plotters["FPS"]["filename"] = "{0}_fps.mov".format(output_new)
+        if args.export_frametime:
+            plotters["Frametime"]["filename"] = "{0}_frametime.mov".format(output_new)
+        if args.export_combined:
+            plotters["Combined"]["filename"] = "{0}_combined.mov".format(output_new)
     else:
-        file_fps = "{0}anim_fps.mov".format(my_path)
-        file_frametime = "{0}anim_frametime.mov".format(my_path)
-        file_combined = "{0}anim_combined.mov".format(my_path)
+        if args.export_fps:
+            plotters["FPS"]["filename"] = "{0}anim_fps.mov".format(my_path)
+        if args.export_frametime:
+            plotters["Frametime"]["filename"] = "{0}anim_frametime.mov".format(my_path)
+        if args.export_combined:
+            plotters["Combined"]["filename"] = "{0}anim_combined.mov".format(my_path)
 
-    if args.type == "fps":
-        if should_generate_graph(file_fps, args.overwrite):
-            save_fps(file_fps)
-    elif args.type == "frametime":
-        if should_generate_graph(file_frametime, args.overwrite):
-            save_frametime(file_frametime)
-    elif args.type == "both":
-        if should_generate_graph(file_combined, args.overwrite):
-            save_combined(file_combined)
-    elif args.type == "all":
-        print("Saving all three files to {0}".format(my_path))
-        if should_generate_graph(file_fps, args.overwrite):
-            save_fps(file_fps)
-        if should_generate_graph(file_frametime, args.overwrite):
-            save_frametime(file_frametime)
-        if should_generate_graph(file_combined, args.overwrite):
-            save_combined(file_combined)
+    # This actually plays the animations for each chart we want
+    # The program doesn't display the graphs live,
+    # the animations are generated in the background.
+    fps_interval = float(100 / 6)
+
+    line_fps = mpl.lines.Line2D(x, y, color="b")
+    line_frametime = mpl.lines.Line2D(x, y2, color="r")
+
+    if args.export_fps:
+        plotters["FPS"]["line"] = plotters["FPS"]["ax"].add_line(line_fps)
+    if args.export_frametime:
+        plotters["Frametime"]["line"] = plotters["Frametime"]["ax"].add_line(
+            line_frametime
+        )
+    if args.export_combined:
+        if args.export_fps:
+            plotters["Combined"]["line1"] = plotters["FPS"]["line"]
+        else:
+            plotters["Combined"]["line1"] = plotters["Combined"]["ax"].add_line(
+                line_fps
+            )
+        if args.export_frametime:
+            plotters["Combined"]["line2"] = plotters["Frametime"]["line"]
+        else:
+            plotters["Combined"]["line2"] = plotters["Combined"]["ax"].add_line(
+                line_frametime
+            )
+
+    animate(plotters, length, x, y, y2, fps_interval, args)
 
 
 @Gooey(
@@ -469,6 +359,7 @@ def main(args):
     default_size=(1280, 720),
     advanced=True,
     navigation="TABBED",
+    clear_before_run=True,
 )
 def parse_arguments():
     """Parse input arguments."""
@@ -504,42 +395,32 @@ def parse_arguments():
         help=output_help,
     )
 
-    interpolation_help = (
-        "Choose the interpolation method for the FPS/FrametTime values.\n"
+    export_fps_help = (
+        "Check the box if you want to generate and export the FPS graph.\n"
     )
-    interpolation_help += '* "linear" uses linear interpolation - a straight line will be generated between each point (Default).'
-    interpolation_help += '* "cubic" uses cubic interpolation. This tries to create smooth curves between points.'
     parser.add_argument(
-        "-i",
-        "--interpolation",
-        type=str,
-        default="linear",
-        choices=["linear", "cubic"],
-        widget="Dropdown",
-        gooey_options={
-            "initial_value": "linear",
-        },
-        help=interpolation_help,
+        "--fps",
+        dest="export_fps",
+        action="store_true",
+        help=export_fps_help,
     )
 
-    type_help = "Choose the what output video graph files to generate.\n"
-    type_help += '* "all" will generate all three graphs - FPS, Frame Time, and FPS + Frame Time combined (Default).\n'
-    type_help += '* "fps" will only generate the FPS video graph.\n'
-    type_help += '* "frametime" will only generate the Frame Time video graph.\n'
-    type_help += (
-        '* "combined" will only generate the combined FPS + Frame Time video graph.\n'
+    export_frametime_help = (
+        "Check the box if you want to generate and export the Frametime graph.\n"
     )
     parser.add_argument(
-        "-t",
-        "--type",
-        type=str,
-        default="all",
-        choices=["all", "fps", "frametime", "combined"],
-        widget="Dropdown",
-        gooey_options={
-            "initial_value": "all",
-        },
-        help=type_help,
+        "--frametime",
+        dest="export_frametime",
+        action="store_true",
+        help=export_frametime_help,
+    )
+
+    export_combined_help = "Check the box if you want to generate and export the combined FPS + Frametime graph.\n"
+    parser.add_argument(
+        "--combined",
+        dest="export_combined",
+        action="store_true",
+        help=export_combined_help,
     )
 
     res_help = "Choose the resolution for the graph video (Default is 1080p).\n"
