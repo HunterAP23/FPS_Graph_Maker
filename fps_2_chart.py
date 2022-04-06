@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 from argparse import RawTextHelpFormatter
@@ -41,18 +42,39 @@ def animate(plots, length, x, y, y2, interval, args):
                 )
 
         def anim(i):
-            nonlocal t, shown
-            t += interval
-            if shown < len(x.array) and t >= x.array[shown]:
-                shown += 1
+            # nonlocal t, shown
+            # t += interval
+            # if shown < len(x.array) and t >= x.array[shown]:
+            #     shown += 1
+            # if "line" in plots[plts].keys():
+            #     plots[plts]["line"].set_data(x.array[:shown], y.array[:shown])
+            # else:
+            #     plots[plts]["line1"].set_data(x.array[:shown], y.array[:shown])
+            #     plots[plts]["line2"].set_data(x.array[:shown], y2.array[:shown])
+            # plots[plts]["ax"].set_xlim(
+            #     x.array[i] - x.array[60], x.array[i] + x.array[60]
+            # )
+            # if "line" in plots[plts].keys():
+            #     return (plots[plts]["line"],)
+            # else:
+            #     return (
+            #         plots[plts]["line1"],
+            #         plots[plts]["line2"],
+            #     )
             if "line" in plots[plts].keys():
-                plots[plts]["line"].set_data(x.array[:shown], y.array[:shown])
+                plots[plts]["line"].set_data(x.array[:i], y.array[:i])
             else:
-                plots[plts]["line1"].set_data(x.array[:shown], y.array[:shown])
-                plots[plts]["line2"].set_data(x.array[:shown], y2.array[:shown])
-            plots[plts]["ax"].set_xlim(
-                x.array[i] - x.array[60], x.array[i] + x.array[60]
-            )
+                plots[plts]["line1"].set_data(x.array[:i], y.array[:i])
+                plots[plts]["line2"].set_data(x.array[:i], y2.array[:i])
+            if i + 60 >= length:
+                plots[plts]["ax"].set_xlim(
+                    x.array[i-60], x.array[length-(length-i)]
+                )
+            else:
+                plots[plts]["ax"].set_xlim(
+                    # x.array[i] - x.array[60], x.array[i] + x.array[60]
+                    x.array[i-60], x.array[i+60]
+                )
             if "line" in plots[plts].keys():
                 return (plots[plts]["line"],)
             else:
@@ -76,7 +98,7 @@ def animate(plots, length, x, y, y2, interval, args):
             or (plts == "Frametime" and args.export_frametime)
             or (plts == "Combined" and args.export_combined)
         ):
-            print("Saving {0} Graph to {1}".format(plt, plots[plts]["filename"]))
+            print("Saving {0} Graph to {1}".format(plots[plts], plots[plts]["filename"]))
             anim_func.save(
                 plots[plts]["filename"],
                 fps=60,
@@ -84,52 +106,34 @@ def animate(plots, length, x, y, y2, interval, args):
                 savefig_kwargs={"transparent": True, "facecolor": "None"},
                 progress_callback=anim_progress,
             )
-            anim_progress(length, length)
             print("\nDone.\n")
 
 
 def main(args):
-    my_CSV = None
-    # Does your CSV file exist?
-    if os.path.isfile(args.GameBench_Report):
-        print(str(args.GameBench_Report) + " exists.")
-        my_CSV = args.GameBench_Report
-    else:
-        print("That CSV file doesn't exist. Are you sure it's there?")
-        exit(1)
+    # my_CSV = None
+    # # Does your CSV file exist?
+    # if os.path.isfile(args.CSV_Report):
+    #     print(str(args.CSV_Report) + " exists.")
+    #     my_CSV = args.CSV_Report
+    # else:
+    #     print("That CSV file doesn't exist. Are you sure it's there?")
+    #     exit(1)
+    my_CSV = args.CSV_Report
 
     my_file = open(my_CSV, "r")
     data = my_file.read()
 
-    # Try to grab the different data from the CSV file
-    # For a default GameBench report, this expects the separator to be a comma
-    # and it will look for columsn titled FPS_TIMESTAMP and FPS_VALUE
-    # if that fails, it will attempt to use a semi-colon as a separator, and
-    # look for columns titled TIMESTAMP and FRAMERATE
-    df = None
-    df_type = None
+    # We'll attempt to use a semi-colon as a separator, and look for columns titled TIMESTAMP and FRAMERATE
     try:
         df = pd.read_csv(
             StringIO(data),
-            usecols=lambda x: x.upper() in ["FPS_TIMESTAMP", "FPS_VALUE"],
+            sep=";",
+            usecols=lambda x: x.upper() in ["TIMESTAMP", "FRAMERATE"],
             index_col=0,
         )
-        df_type = "GameBench"
     except Exception:
-        try:
-            df = pd.read_csv(
-                StringIO(data),
-                sep=";",
-                usecols=lambda x: x.upper() in ["TIMESTAMP", "FRAMERATE"],
-                index_col=0,
-            )
-            df_type = "Other"
-        except Exception:
-            raise ValueError("No valid column header values found.")
+        raise ValueError("No valid column header values found.")
 
-    if df_type == "GameBench":
-        df.rename(columns={"FPS_value": "framerate"}, inplace=True)
-        df.index.names = ["timestamp"]
     index_fixed = []
     for i in df.index:
         index_fixed.append(i.replace("_", " ").replace("-", " ").replace(":", " "))
@@ -144,32 +148,33 @@ def main(args):
             second=int(i_split[5]),
             microsecond=int(i_split[6]) * 1000,
         )
-        if i == 0:
-            index_fixed[0] = float(i_dt.second + (i_dt.microsecond / 1000000))
-        else:
-            index_fixed[i] = (
-                float(i_dt.second + (i_dt.microsecond / 1000000)) - index_fixed[0]
-            )
-    index_fixed[0] = 0.0
+        # if i == 0:
+        #     # index_fixed[0] = float(i_dt.second + (i_dt.microsecond / 1000000))
+        #     index_fixed[0] = i_dt
+        # else:
+        #     index_fixed[i] = (
+        #         # float(i_dt.second + (i_dt.microsecond / 1000000)) - index_fixed[0]
+        #         i_dt - index_fixed[0]
+        #     )
+        index_fixed[i] = i_dt
+    # index_fixed[0] = 0.0
     df.index = index_fixed
-
-    # replace original list of FPS values with one that doesn't
-    # have any NaN values.
-    # print("Removing NaN values.")
-    # df = df[pd.notnull(df["FPS_value"])]
+    try:
+        df = df.resample("16.6667L").interpolate(method="cubic")
+        index_scaled = []
+        for i in range(len(df.index)):
+            to_dt = df.index[i].to_pydatetime()
+            index_scaled.append(float(to_dt.second + (to_dt.microsecond / 1000000)))
+        df.index = index_scaled
+    except Exception:
+        pass
 
     # the index is really the values actually the FPS_timestamp column.
-    # x -> FPS timestamp
+    # x -> FPS timestamps
     # y -> FPS value at that timestamp
     # x = np.asarray(df.index)
-    x = None
-    y = None
-    if df_type == "GameBench":
-        x = pd.Series(df.index)
-        y = pd.Series(df["framerate"])
-    else:
-        x = pd.Series(df.index)
-        y = pd.Series(df["framerate"])
+    x = pd.Series(df.index)
+    y = pd.Series(df["framerate"])
 
     # set the all the plot params
     plt.rcParams.update(
@@ -227,8 +232,11 @@ def main(args):
     print("Removing inf frame-time values from doing division-by-zero.")
     with np.errstate(divide="ignore", invalid="ignore"):
         y2 = pd.Series(1000 / df["framerate"])
-    y2[y2 == np.Inf] = 0
-    y2[y2 == np.NINF] = 0
+    y2[y2 == np.Inf] = np.nan
+    y2[y2 == np.NINF] = np.nan
+
+    y = y.interpolate(method="cubic")
+    y2 = y2.interpolate(method="cubic")
 
     length = len(x)  # Total count of frames
     fps_min = y.min()  # Lowest recorded FPS value
@@ -261,19 +269,19 @@ def main(args):
     print("Mean Frametime: {0}ms".format(frametime_mean))
     print("Median Frametime: {0}ms".format(frametime_median))
 
+    # This actually plays the animations for each chart we want
+    # The program doesn't display the graphs live,
+    # the animations are generated in the background.
+    fps_interval = float(100 / 6)
+
     # y_index = pd.Series(y.index)
     # y_val_new = []
     # y_idx_new = []
-    # i = 0
     # for y_val, y_idx, diff in zip(y, y_index, y_index.diff()):
     #     y_idx_new.append(y_idx)
     #     y_val_new.append(y_val)
-    #     if diff > frametime_min / 1000:
-    #         # print("diff is {}".format(diff))
-    #         # print("min frametime is: {}".format(frametime_min / 2000))
-    #         # exit()
-    #         mul = (diff / (frametime_min / 1000)) - 1
-    #         for i in range(round(mul)):
+    #     for i in range(round(mul)):
+    #         for i in range(499):
     #             y_idx_new.append(np.nan)
     #             y_val_new.append(np.nan)
 
@@ -283,6 +291,7 @@ def main(args):
     # )
     # x = pd.Series(y.index)
     # length = len(x)
+
 
     # Set the range for the Y-axis between 0 and item's max * 1.1
     if "FPS" in plotters.keys():
@@ -307,26 +316,28 @@ def main(args):
     if my_path == "":
         my_path, my_file = os.getcwd().split("fps_2_chart.py")
 
-    if args.output:
-        output_new = ".".join(args.output.split(".")[:-1])
-        if args.export_fps:
-            plotters["FPS"]["filename"] = "{0}_fps.mov".format(output_new)
-        if args.export_frametime:
-            plotters["Frametime"]["filename"] = "{0}_frametime.mov".format(output_new)
-        if args.export_combined:
-            plotters["Combined"]["filename"] = "{0}_combined.mov".format(output_new)
-    else:
-        if args.export_fps:
-            plotters["FPS"]["filename"] = "{0}anim_fps.mov".format(my_path)
-        if args.export_frametime:
-            plotters["Frametime"]["filename"] = "{0}anim_frametime.mov".format(my_path)
-        if args.export_combined:
-            plotters["Combined"]["filename"] = "{0}anim_combined.mov".format(my_path)
-
-    # This actually plays the animations for each chart we want
-    # The program doesn't display the graphs live,
-    # the animations are generated in the background.
-    fps_interval = float(100 / 6)
+    # if args.output:
+    #     output_new = ".".join(args.output.split(".")[:-1])
+    #     if args.export_fps:
+    #         plotters["FPS"]["filename"] = "{0}_fps.mov".format(output_new)
+    #     if args.export_frametime:
+    #         plotters["Frametime"]["filename"] = "{0}_frametime.mov".format(output_new)
+    #     if args.export_combined:
+    #         plotters["Combined"]["filename"] = "{0}_combined.mov".format(output_new)
+    # else:
+    #     if args.export_fps:
+    #         plotters["FPS"]["filename"] = "{0}anim_fps.mov".format(my_path)
+    #     if args.export_frametime:
+    #         plotters["Frametime"]["filename"] = "{0}anim_frametime.mov".format(my_path)
+    #     if args.export_combined:
+    #         plotters["Combined"]["filename"] = "{0}anim_combined.mov".format(my_path)
+    output_new = ".".join(args.output.split(".")[:-1])
+    if args.export_fps:
+        plotters["FPS"]["filename"] = "{0}_fps.mov".format(output_new)
+    if args.export_frametime:
+        plotters["Frametime"]["filename"] = "{0}_frametime.mov".format(output_new)
+    if args.export_combined:
+        plotters["Combined"]["filename"] = "{0}_combined.mov".format(output_new)
 
     line_fps = mpl.lines.Line2D(x, y, color="b")
     line_frametime = mpl.lines.Line2D(x, y2, color="r")
@@ -364,18 +375,18 @@ def main(args):
 def parse_arguments():
     """Parse input arguments."""
 
-    main_help = "Plot GameBench report to to a live video graph."
+    main_help = "Plot CSV report to to a live video graph."
     parser = GooeyParser(description=main_help, formatter_class=RawTextHelpFormatter)
     parser.add_argument(
-        "GameBench_Report",
+        "CSV_Report",
         widget="FileChooser",
         gooey_options={
             "default_dir": str(Path(__file__).parent),
             "message": "Input file name",
-            "initial_value": "GameBench Report",
+            "initial_value": "CSV Report",
             "wildcard": "Comma separated file (*.csv)|*.csv|" "All files (*.*)|*.*",
         },
-        help="GameBench CSV report file.",
+        help="CSV report file.",
     )
 
     output_help = 'Output filename (Default: "graph").\n'
@@ -389,8 +400,8 @@ def parse_arguments():
         gooey_options={
             "default_dir": str(Path(__file__).parent),
             "message": "Output file name",
-            "default_file": "graph.mov",
-            "initial_value": "graph.mov",
+            "default_file": "graph",
+            "initial_value": "graph",
         },
         help=output_help,
     )
@@ -453,14 +464,6 @@ def parse_arguments():
             "initial_value": 100,
         },
         help=dpi_help,
-    )
-
-    overwrite_help = 'Use this flag to overwrite any existing files that have the same output name as the one set by the "-o" argument.'
-    parser.add_argument(
-        "--overwrite",
-        required=False,
-        action="store_true",
-        help=overwrite_help,
     )
 
     return parser.parse_args()

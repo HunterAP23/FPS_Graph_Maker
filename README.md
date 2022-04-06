@@ -1,8 +1,9 @@
-# GameBench_Graph_Maker
-Creates animated graphs from GameBench CSV files.
+# FPS_Graph_Maker
+Creates animated graphs from different FPS CSV files.
+Currently only works with Elgato's 4k Capture Utility's logging feature.
 
 # Installation & Requirements
-Requires Python 3.
+Requires Python 3.4 or newer.
 Install the dependencies using the install_dependencies.bat for Windows,
 or alternatively run the following command:
 ```
@@ -32,13 +33,13 @@ python fps_2_chart.py -h
 
 Here is what that output looks like:
 ```
-usage: fps_2_chart.py [-h] [-o OUTPUT] [-i {linear,cubic}] [-t {default,fps,frametime,both}] [-r {720p,1080p,1440p,4k}] [-d DPI] [-w]
-                      GameBench_Report
+usage: fps_2_chart.py [-h] [-o OUTPUT] [--fps] [--frametime] [--combined] [-r {720p,1080p,1440p,4k}] [-d DPI] [-w]
+                      CSV_Report
 
-Plot GameBench report to to a live video graph.
+Plot CSV report to to a live video graph.
 
 positional arguments:
-  GameBench_Report      GameBench CSV report file.
+  CSV_Report      FPS CSV report file.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -46,21 +47,24 @@ optional arguments:
                         Output filename (Default: "graph").
                         Depending on what you generate, the output files will have "_fps" or "_frametime" or "_both" appended to them
                         (IE: "graph" would generate "graph_fps.mov").
-  -i {linear,cubic}, --interp {linear,cubic}
-                        Choose the interpolation method for the FPS/FrametTime values.
-                        * "linear" uses linear interpolation - a straight line will be generated between each point.
-                        * "cubic" uses cubic interpolation. This tries to create smooth curves between points.
-  -t {default,fps,frametime,both}, --type {default,fps,frametime,both}
-                        Choose the what output video graph files to generate.
-                        * "default" will generate all three graphs - FPS, Frame Time, and FPS + Frame Time combined.
-                        * "fps" will only generate the FPS video graph.
-                        * "frametime" will only generate the Frame Time video graph.
-                        * "both" will only generate the combined FPS + Frame Time video graph.
+  --fps
+                        Output a live FPS graph file.
+  --frametime
+                        Output a live Frametime graph file.
+  --combined
+                        Output a combined live FPS + Frametime graph file.
   -r {720p,1080p,1440p,4k}, --resolution {720p,1080p,1440p,4k}
                         Choose the resolution for the graph video (Default is 1080p).
                         Note that higher values will mean drastically larger files and take substantially longer to encode.
   -d DPI, --dpi DPI     Choose the DPI value for the graph image and video (Default is 100).
                         The DPI value must be greater than or equal to 2.
                         Note that higher values will mean drastically larger files and take substantially longer to encode.
-  -w, --overwrite       Use this flag to overwrite any existing files that have the same output name as the one set by the "-o" argument.
 ```
+
+# Contributing
+Any commits that look to improve this application is appreciated! The main focus pints / TO-DO for this app (inn order of highest to lowest priority) is as follows:
+1. Frame interpolation & downsampling
+  - Not all apps log their information at a constant rate (IE: one measure per millisecond)
+  - This variable logging rate means that placing data pointso n a live graph that expects conistent spacing is an issue
+  - The goal would be to interpolate the data to get rid of the gaps
+  - This causes a new issue of having more frame to encode, requiring either a faster framerate
