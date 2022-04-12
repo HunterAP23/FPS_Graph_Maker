@@ -8,13 +8,13 @@ gooey = ">=1.0.8.1"
 matplotlib = ">=3.3.4"
 numpy = ">=1.20.1"
 pandas = ">=1.2.3"
-plotly = ">=5.7.0"
 scipy = ">=1.6.1"
 
 [dev-packages]
 black = ">=22.3.0"
 isort = ">=5.10.1"
 flake8 = ">=4.0.1"
+pyinstaller = ">=4.10"
 
 [requires]
 python_version = "3.9"

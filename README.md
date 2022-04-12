@@ -62,9 +62,10 @@ optional arguments:
 ```
 
 # Contributing
-Any commits that look to improve this application is appreciated! The main focus pints / TO-DO for this app (inn order of highest to lowest priority) is as follows:
-1. Frame interpolation & downsampling
-  - Not all apps log their information at a constant rate (IE: one measure per millisecond)
-  - This variable logging rate means that placing data pointso n a live graph that expects conistent spacing is an issue
-  - The goal would be to interpolate the data to get rid of the gaps
-  - This causes a new issue of having more frame to encode, requiring either a faster framerate
+Any commits that look to improve this application is appreciated!
+## Todo
+1. [x] Rework GUI layout
+2. [x] Add checkbox for enabling writing y-axis frame labels
+3. [ ] Add multithreading to graph file exports
+4. [ ] Package app into executable binary using pyinstaller
+5. [ ] Add progress bar to GUI
