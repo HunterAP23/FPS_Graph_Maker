@@ -20,6 +20,9 @@ jobs:
       with:
         python-version: 3.9
 
+    - run: sudo apt-get install build-essential libgtk-3-dev
+      if: ${{"${{ matrix.os }}" == "ubuntu-latest"}}
+
     - run: python -m pip install --upgrade pip wheel setuptools
     - run: pip install -r src/requirements.txt
     - run: pyinstaller -y --dist dist/${{ matrix.os }} --clean -F -n "FPS Grapher" --noconsole src/fps_2_chart.py
