@@ -21,7 +21,7 @@ jobs:
         python-version: 3.9
 
     - run: sudo apt-get install build-essential libgtk-3-dev
-      if: "'${{matrix.os}}' == 'ubuntu-latest'"
+      if: ${{matrix.os == 'ubuntu-latest'}}
 
     - run: python -m pip install --upgrade pip wheel setuptools pyinstaller
     - run: pip install -r src/requirements.txt
