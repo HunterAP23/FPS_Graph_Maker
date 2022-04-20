@@ -66,6 +66,7 @@ Any commits that look to improve this application is appreciated!
 ## Todo
 1. [x] Rework GUI layout
 2. [x] Add checkbox for enabling writing y-axis frame labels
-3. [ ] Add multithreading to graph file exports
-4. [ ] Package app into executable binary using pyinstaller
-5. [ ] Add progress bar to GUI
+3. [x] Add logic to handle situations where user does not provide a report CSV or does not select any graph files to export
+4. [ ] Add multithreading to graph file exports
+5. [ ] Package app into executable binary using pyinstaller
+6. [ ] Add progress bar to GUI

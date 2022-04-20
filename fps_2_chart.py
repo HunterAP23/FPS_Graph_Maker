@@ -319,6 +319,20 @@ def main(args):
     advanced=True,
     navigation="TABBED",
     clear_before_run=True,
+    menu=[
+        {
+            "name": "Framerate Graph Generator",
+            "items": [{
+                "type": "AboutDialog",
+                "menuTitle": "About",
+                "description": "Create live video graphs of recorded FPS values",
+                "version": "0.8",
+                "copyright": "2020",
+                "website": "https://github.com/HunterAP/FPS_Graph_Maker",
+                "license": "GPLv3",
+            }],
+        },
+    ],
 )
 def parse_arguments():
     """Parse input arguments."""
@@ -437,11 +451,27 @@ def parse_arguments():
 
     args = parser.parse_args()
 
-    try:
-        if not any([args.Export_FPS, args.Export_Frametime, args.Export_Combined]):
-            raise ValueError("Must choose at least one graph type to export.")
-    except Exception as e:
-        raise ValueError("Must choose at least one graph type to export.")
+    if str(args.CSV_Report) == "CSV Report":
+        raise ValueError(
+            "CSV Report argument is required but was not provided by the user."
+        )
+
+    if (
+        (
+            "Export_FPS" not in args
+            or ("Export_FPS" in args and args.Export_FPS is False)
+        )
+        and (
+            "Export_Frametime" not in args
+            or ("Export_Frametime" in args and args.Export_Frametime is False)
+        )
+        and (
+            "Export_Combined" not in args
+            or ("Export_Combined" in args and args.Export_Combined is False)
+        )
+    ):
+        # raise ValueError("Must choose at least one graph type to export.")
+        print("No export files chosen - printing general statistics.")
 
     return args
 
