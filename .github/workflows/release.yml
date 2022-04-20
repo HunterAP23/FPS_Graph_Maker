@@ -25,7 +25,7 @@ jobs:
 
     - run: python -m pip install --upgrade pip wheel setuptools pyinstaller
     - run: pip install -r src/requirements.txt
-    - run: pyinstaller -y --dist dist/${{ matrix.os }} --clean -F -n "FPS Grapher" --noconsole src/fps_2_chart.py
+    - run: pyinstaller -y --dist src/dist/${{ matrix.os }} --clean -F -n "FPS Grapher" --noconsole src/fps_2_chart.py
     - uses: actions/upload-artifact@v2
       with:
         name: name-of-artifact
