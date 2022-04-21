@@ -63,20 +63,25 @@ jobs:
 
     - uses: actions/download-artifact@v3
 
-    - run: ls -l
-    - run: ls -l windows-latest
-    - run: ls -l ubuntu-latest
-    - run: ls -l macos-latest
-    - run: ls -l macos-latest/FPS_Grapher
-    - run: ls -l macos-latest/FPS_Grapher.app
+    - run: |
+        cd windows-latest
+        zip -r FPS_Grapher_Windows.zip FPS_Grapher.exe
+
+    - run: |
+        cd ubuntu-latest
+        zip -r FPS_Grapher_Ubuntu.zip FPS_Grapher
     
-    # - uses: ncipollo/release-action@v1
-    #   with:
-    #     artifacts: |
-    #       windows-latest/FPS_Grapher.exe
-    #       ubuntu-latest/FPS_Grapher
-    #       macos-latest/FPS_Grapher.app
-    #     bodyFile: "release.md"
-    #     allowUpdates: true
-    #     replacesArtifacts: true
-    #     tag: release-v.1.0.0
+    - run: |
+        cd macos-latest
+        zip -r FPS_Grapher.app.zip FPS_Grapher.app 
+    
+    - uses: ncipollo/release-action@v1
+      with:
+        artifacts: |
+          windows-latest/FPS_Grapher_Windows.zip
+          ubuntu-latest/FPS_Grapher_Ubuntu.zip
+          macos-latest/FPS_Grapher.app.zip 
+        bodyFile: "release.md"
+        allowUpdates: true
+        replacesArtifacts: true
+        tag: release-v1.0.0
