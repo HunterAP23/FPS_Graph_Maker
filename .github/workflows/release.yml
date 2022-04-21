@@ -28,7 +28,7 @@ jobs:
       run: python -m pip install --upgrade pip wheel setuptools pyinstaller
 
     - name: Download Ubuntu wxPython build directly
-      run: wget https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-20.04/wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
+      run: wget https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04/wxPython-4.1.1-cp39-cp39-linux_x86_64.whl.asc
       if: ${{matrix.os == 'ubuntu-latest'}}
     
     - name: Install Python wheel module for Ubuntu
