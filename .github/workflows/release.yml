@@ -73,14 +73,14 @@ jobs:
     
     - run: |
         cd macos-latest
-        zip -r FPS_Grapher.app.zip FPS_Grapher.app 
+        zip -r FPS_Grapher_MacOS.zip FPS_Grapher.app 
     
     - uses: ncipollo/release-action@v1
       with:
         artifacts: |
           windows-latest/FPS_Grapher_Windows.zip
           ubuntu-latest/FPS_Grapher_Ubuntu.zip
-          macos-latest/FPS_Grapher.app.zip 
+          macos-latest/FPS_Grapher_MacOS.zip 
         bodyFile: "release.md"
         allowUpdates: true
         replacesArtifacts: true
