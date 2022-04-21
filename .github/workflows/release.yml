@@ -64,9 +64,9 @@ jobs:
     - uses: ncipollo/release-action@v1
       with:
         artifacts: |
-          windows-latest/*
-          ubuntu-latest/*
-          macos-latest/*
+          "windows-latest/FPS Grapher.exe"
+          "ubuntu-latest/FPS Grapher"
+          "macos-latest/FPS Grapher.app"
         bodyFile: "release.md"
         allowUpdates: true
         replacesArtifacts: true
