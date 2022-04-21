@@ -45,7 +45,7 @@ jobs:
       run: pip install -r src/requirements.txt
 
     - name: Build app with pyinstaller
-      run: pyinstaller -y --dist src/dist/${{ matrix.os }}/ --clean -F -n "FPS Grapher" --noconsole src/fps_2_chart.py
+      run: pyinstaller -y --dist src/dist/${{ matrix.os }}/ --clean -F -n "FPS_Grapher" --noconsole src/fps_2_chart.py
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
@@ -67,13 +67,15 @@ jobs:
     - run: ls -l windows-latest
     - run: ls -l ubuntu-latest
     - run: ls -l macos-latest
+    - run: ls -l macos-latest/FPS_Grapher
+    - run: ls -l macos-latest/FPS_Grapher.app
     
     # - uses: ncipollo/release-action@v1
     #   with:
     #     artifacts: |
-    #       "windows-latest/FPS Grapher.exe"
-    #       "ubuntu-latest/FPS Grapher"
-    #       "macos-latest/FPS Grapher.app"
+    #       windows-latest/FPS_Grapher.exe
+    #       ubuntu-latest/FPS_Grapher
+    #       macos-latest/FPS_Grapher.app
     #     bodyFile: "release.md"
     #     allowUpdates: true
     #     replacesArtifacts: true
