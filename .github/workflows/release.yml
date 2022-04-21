@@ -2,6 +2,8 @@ name: Package Code
 
 on:
   push:
+    tags:
+      - 'release-v*' # Push events to matching release-v*, i.e. release-v1.50
     branches: [ master ]
   pull_request:
     branches: [ master ]
@@ -60,14 +62,16 @@ jobs:
     - uses: actions/checkout@v3
 
     - uses: actions/download-artifact@v3
+
+    - run: ls -l
     
-    - uses: ncipollo/release-action@v1
-      with:
-        artifacts: |
-          "windows-latest/FPS Grapher.exe"
-          "ubuntu-latest/FPS Grapher"
-          "macos-latest/FPS Grapher.app"
-        bodyFile: "release.md"
-        allowUpdates: true
-        replacesArtifacts: true
-        tag: release-v.1.0.0
+    # - uses: ncipollo/release-action@v1
+    #   with:
+    #     artifacts: |
+    #       "windows-latest/FPS Grapher.exe"
+    #       "ubuntu-latest/FPS Grapher"
+    #       "macos-latest/FPS Grapher.app"
+    #     bodyFile: "release.md"
+    #     allowUpdates: true
+    #     replacesArtifacts: true
+    #     tag: release-v.1.0.0
