@@ -64,6 +64,9 @@ jobs:
     - uses: actions/download-artifact@v3
 
     - run: ls -l
+    - run: ls -l windows-latest
+    - run: ls -l ubuntu-latest
+    - run: ls -l macos-latest
     
     # - uses: ncipollo/release-action@v1
     #   with:
