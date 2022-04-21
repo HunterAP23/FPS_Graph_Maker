@@ -58,9 +58,15 @@ jobs:
       contents: write
     steps:
     - uses: actions/checkout@v3
+
+    - uses: actions/download-artifact@v3
+    
     - uses: ncipollo/release-action@v1
       with:
-        artifacts: "windows-latest,ubuntu-latest,macos-latest"
+        artifacts: |
+          windows-latest
+          ubuntu-latest
+          macos-latest
         bodyFile: "release.md"
         allowUpdates: true
         replacesArtifacts: true
