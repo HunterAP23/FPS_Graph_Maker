@@ -20,14 +20,33 @@ jobs:
       with:
         python-version: 3.9
 
-    - run: sudo apt-get install build-essential libgtk-3-dev
+    - name: Install Linux-specific dependencies
+      run: sudo apt-get install build-essential libgtk-3-dev
       if: ${{matrix.os == 'ubuntu-latest'}}
 
-    - run: python -m pip install --upgrade pip wheel setuptools pyinstaller
-    - run: pip install --upgrade -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-20.04/ wxPython
-    - run: pip install -r src/requirements.txt
-    - run: pyinstaller -y --dist src/dist/${{ matrix.os }}/ --clean -F -n "FPS Grapher" --noconsole src/fps_2_chart.py
-    - uses: actions/upload-artifact@v3
+    - name: Update python installation files & install pyinstaller
+      run: python -m pip install --upgrade pip wheel setuptools pyinstaller
+
+    - name: Download Ubuntu wxPython build directly
+      run: wget https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-20.04/wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
+      if: ${{matrix.os == 'ubuntu-latest'}}
+    
+    - name: Install Python wheel module for Ubuntu
+      run: pip install --upgrade wheel
+      if: ${{matrix.os == 'ubuntu-latest'}}
+
+    - name: Install Ubuntu wxPython wheel
+      run: pip install wxPython-4.1.1-cp38-cp38-linux_x86_64.whl
+      if: ${{matrix.os == 'ubuntu-latest'}}
+
+    - name: Install general dependencies
+      run: pip install -r src/requirements.txt
+
+    - name: Build app with pyinstaller
+      run: pyinstaller -y --dist src/dist/${{ matrix.os }}/ --clean -F -n "FPS Grapher" --noconsole src/fps_2_chart.py
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.os }}
         path: src/dist/${{ matrix.os }}/
