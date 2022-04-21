@@ -40,9 +40,8 @@ jobs:
     - uses: actions/checkout@v3
     - uses: ncipollo/release-action@v1
       with:
-        artifacts: "src/dist/windows-latest,src/dist/ubuntu-latest,src/dist/macos-latest"
+        artifacts: "windows-latest,ubuntu-latest,macos-latest"
         bodyFile: "release.md"
-        token: ${{ secrets.GITHUB_TOKEN }}
         allowUpdates: true
         replacesArtifacts: true
         tag: release-v.1.0.0
