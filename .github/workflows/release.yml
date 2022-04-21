@@ -64,9 +64,9 @@ jobs:
     - uses: ncipollo/release-action@v1
       with:
         artifacts: |
-          windows-latest
-          ubuntu-latest
-          macos-latest
+          windows-latest/*
+          ubuntu-latest/*
+          macos-latest/*
         bodyFile: "release.md"
         allowUpdates: true
         replacesArtifacts: true
