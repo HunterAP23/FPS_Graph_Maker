@@ -54,7 +54,7 @@ jobs:
         path: src/dist/${{ matrix.os }}/
   
   release:
-    if: ${{should_release == true}}
+    if: ${{should_release}}
     needs: build
     runs-on: ubuntu-latest
     permissions:
