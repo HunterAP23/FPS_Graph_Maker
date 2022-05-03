@@ -54,7 +54,7 @@ jobs:
         path: src/dist/${{ matrix.os }}/
   
   release:
-    if: should_release == true
+    if: ${{should_release == true}}
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -85,4 +85,4 @@ jobs:
         bodyFile: "CHANGELOG.md"
         allowUpdates: true
         replacesArtifacts: true
-        tag: version
+        tag: $version
