@@ -1,3 +1,6 @@
+# Version 1.0.1
+GH Actions updates - no new release necessary
+
 # Version 1.0.0
 First official release build.
 1. Accepts Elgato 4K Capture Utility's CSV logging format.

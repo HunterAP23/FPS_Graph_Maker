@@ -8,6 +8,10 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  should_release: false
+  version: release-v1.0.1
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -32,10 +36,6 @@ jobs:
     - name: Download Ubuntu wxPython build directly
       run: wget https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04/wxPython-4.1.1-cp39-cp39-linux_x86_64.whl
       if: ${{matrix.os == 'ubuntu-latest'}}
-    
-    - name: Install Python wheel module for Ubuntu
-      run: pip install --upgrade wheel
-      if: ${{matrix.os == 'ubuntu-latest'}}
 
     - name: Install Ubuntu wxPython wheel
       run: pip install wxPython-4.1.1-cp39-cp39-linux_x86_64.whl
@@ -54,6 +54,7 @@ jobs:
         path: src/dist/${{ matrix.os }}/
   
   release:
+    if: $should_release == true
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -84,4 +85,4 @@ jobs:
         bodyFile: "CHANGELOG.md"
         allowUpdates: true
         replacesArtifacts: true
-        tag: release-v1.0.0
+        tag: $version
