@@ -2,15 +2,12 @@ name: Package Code
 
 on:
   push:
-    tags:
-      - 'release-v*' # Push events to matching release-v*, i.e. release-v1.50
-    branches: [ master ]
+    branches: 
+    - master
+    - 'releases/v[0-9].[0-9].[0-9]'
+  workflow_dispatch:
   pull_request:
     branches: [ master ]
-
-env:
-  should_release: false
-  version: release-v1.0.1
 
 jobs:
   build:
@@ -54,7 +51,10 @@ jobs:
         path: src/dist/${{ matrix.os }}/
   
   release:
-    if: ${{should_release}}
+    if: |
+      startsWith(github.ref, 'refs/heads/release') ||
+      github.base_ref == refs/heads/main
+      
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -85,4 +85,4 @@ jobs:
         bodyFile: "CHANGELOG.md"
         allowUpdates: true
         replacesArtifacts: true
-        tag: $version
+        tag: github.ref_name
