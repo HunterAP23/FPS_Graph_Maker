@@ -52,7 +52,7 @@ jobs:
         ${{matrix.os == 'ubuntu-latest'}} ||
         ${{matrix.os == 'macos-latest'}}
 
-    - name: Install dependencies and cython
+    - name: Install dependencies and Cython
       run: |
         python3 -m pip install -U pip setuptools wheel cython
         python3 -m pip install -r src/requirements.txt
@@ -95,23 +95,26 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Check if requirements.txt includes the gooey library
+      run: echo "gooey_present=$(cat src/requirements.txt | grep -c 'gooey')" >> $GITHUB_ENV
+
     - name: Install Linux-specific dependencies
       run: sudo apt-get install build-essential libgtk-3-dev
       if: |
         ${{matrix.os == 'ubuntu-latest'}} &&
-        contains('${{cat src/requirements.txt}}', 'gooey')
+        ${{ gooey_present > 0 }}
 
     - name: Download Ubuntu wxPython build directly
       run: wget https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04/wxPython-4.1.1-cp39-cp39-linux_x86_64.whl
       if: |
         ${{matrix.os == 'ubuntu-latest'}} &&
-        contains('${{cat src/requirements.txt}}', 'gooey')
+        ${{ gooey_present > 0 }}
 
     - name: Install Ubuntu wxPython wheel
       run: pip install wxPython-4.1.1-cp39-cp39-linux_x86_64.whl
       if: |
         ${{matrix.os == 'ubuntu-latest'}} &&
-        contains('${{cat src/requirements.txt}}', 'gooey')
+        ${{ gooey_present > 0 }}
 
     - name: Install python dependencies and pyinstaller
       run: |
