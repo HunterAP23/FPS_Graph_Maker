@@ -26,6 +26,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.spec
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -129,7 +130,13 @@ dmypy.json
 
 # Video files
 *.mov
-*.webm
 
 # pipenv files
 Pipfile.lock
+
+# Cython C and CPP files
+*.c
+*.cpp
+
+# Executable release folder
+release/

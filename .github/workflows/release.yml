@@ -7,78 +7,159 @@ on:
     branches: [ main ]
 
 jobs:
+  compile:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
+        python-version: ["3.9", "pypy-3.9"]
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Download Build Tools for Visual Studio 2019
+      run: Invoke-WebRequest -Uri https://aka.ms/vs/16/release/vs_buildtools.exe -OutFile vs_buildtools.exe
+      if: ${{matrix.os == "windows-latest"}}
+
+    - name: Run vs_buildtools.exe install
+      # run: ./vs_buildtools.exe --quiet --wait --norestart --nocache --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.14.31.17.1.x86.x64.Spectre --add Microsoft.VisualStudio.Component.VC.140 --includeRecommended
+      run: ./vs_buildtools.exe --quiet --wait --norestart --nocache --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.v141.x86.x64 --add Microsoft.VisualStudio.Component.VC.140 --includeRecommended
+      if: ${{matrix.os == "windows-latest"}}
+
+    - uses: actions/setup-python@v3
+      with:
+        python-version: ${{python-version}}
+
+    - name: Set up Python virtual environment
+      run: python -m venv --upgrade-deps .venv
+
+    - name: Enter virtual environment (Windows)
+      run: .venv/Scripts/activate.ps1
+
+    - name: Enter virtual environment (Unix)
+      run: .venv/Scripts/activate
+
+    - name: Install dependencies and cython
+      run: |
+        python -m pip install -U pip
+        python -m pip install -U wheel cython
+        python -m pip install -r src/requirements.txt
+
+    - name: Compile cythonized code 
+      run: python src/setup.py build_ext --inplace
+    
+    - name: Upload Windows artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: compiled-${{ matrix.os }}-${{python-version}}
+        path: package/*win_amd64.pyd
+      if: ${{matrix.os == "windows-latest"}}
+
+    - name: Upload Linux artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: compiled-${{ matrix.os }}-${{python-version}}
+        path: package/*linux-gnu.so
+      if: ${{matrix.os == "ubuntu-latest"}}
+
+    - name: Upload MacOS artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: compiled-${{ matrix.os }}-${{python-version}}
+        path: package/*darwin.so
+      if: ${{matrix.os == "macos-latest"}}
+
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: ["windows-latest", "ubuntu-latest", "macos-latest"]
+        python-version: ["3.9", "pypy-3.9"]
 
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v3
       with:
-        python-version: 3.9
+        python-version: ${{python-version}}
 
     - name: Install Linux-specific dependencies
       run: sudo apt-get install build-essential libgtk-3-dev
-      if: ${{matrix.os == 'ubuntu-latest'}}
-
-    - name: Update python installation files & install pyinstaller
-      run: python -m pip install --upgrade pip wheel setuptools pyinstaller
+      if: |
+        ${{matrix.os == "ubuntu-latest"}} &&
+        contains("${{cat src/requirements.txt}}", "gooey")
 
     - name: Download Ubuntu wxPython build directly
       run: wget https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04/wxPython-4.1.1-cp39-cp39-linux_x86_64.whl
-      if: ${{matrix.os == 'ubuntu-latest'}}
+      if: |
+        ${{matrix.os == "ubuntu-latest"}} &&
+        contains("${{cat src/requirements.txt}}", "gooey")
 
     - name: Install Ubuntu wxPython wheel
       run: pip install wxPython-4.1.1-cp39-cp39-linux_x86_64.whl
-      if: ${{matrix.os == 'ubuntu-latest'}}
+      if: |
+        ${{matrix.os == "ubuntu-latest"}} &&
+        contains("${{cat src/requirements.txt}}", "gooey")
 
-    - name: Install general dependencies
-      run: pip install -r src/requirements.txt
+    - name: Install python dependencies and pyinstaller
+      run: |
+        python -m pip install -U pip 
+        python -m pip install -U wheel pyinstaller
+        python -m pip install -r src/requirements.txt
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: compiled-${{ matrix.os }}-${{python-version}}
+        path: package/
+
+    - name: Create pyinstaller specfile
+      run: pyi-makespec.exe -F -n "FPS_Grapher" -r package/compiled-${{ matrix.os }}-${{python-version}}/*,dll,package/compiled-${{ matrix.os }}-${{python-version}}/* --noconsole package/main.py
 
     - name: Build app with pyinstaller
-      run: pyinstaller -y --dist src/dist/${{ matrix.os }}/ --clean -F -n "FPS_Grapher" --noconsole src/fps_2_chart.py
+      run: pyinstaller -y --dist release/${{ matrix.os }}-${{python-version}}/ --clean FPS_Grapher.spec
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.os }}
-        path: src/dist/${{ matrix.os }}/
+        name: ${{ matrix.os }}-${{python-version}}
+        path: release/${{ matrix.os }}-${{python-version}}/
   
   release:
     if: |
-      startsWith(github.ref, 'refs/tags/release') &&
-      github.base_ref == 'refs/heads/main'
+      startsWith(github.ref, "refs/tags/release") &&
+      github.base_ref == "refs/heads/main"
       
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    strategy:
+      matrix:
+          python-version: ["3.9", "pypy-3.9"]
     steps:
     - uses: actions/checkout@v3
 
     - uses: actions/download-artifact@v3
 
     - run: |
-        cd windows-latest
-        zip -r FPS_Grapher_Windows.zip FPS_Grapher.exe
+        cd release/windows-latest-${{python-version}}
+        zip -r FPS_Grapher_Windows-${{python-version}}.zip FPS_Grapher.exe
 
     - run: |
-        cd ubuntu-latest
-        zip -r FPS_Grapher_Ubuntu.zip FPS_Grapher
+        cd release/ubuntu-latest-${{python-version}}
+        zip -r FPS_Grapher_Ubuntu-${{python-version}}.zip FPS_Grapher
     
     - run: |
-        cd macos-latest
-        zip -r FPS_Grapher_MacOS.zip FPS_Grapher.app 
+        cd release/macos-latest-${{python-version}}
+        zip -r FPS_Grapher_MacOS-$-{{python-version}}.zip FPS_Grapher.app 
     
     - uses: ncipollo/release-action@v1
       with:
         artifacts: |
-          windows-latest/FPS_Grapher_Windows.zip
-          ubuntu-latest/FPS_Grapher_Ubuntu.zip
-          macos-latest/FPS_Grapher_MacOS.zip 
+          release/windows-latest-${{python-version}}/FPS_Grapher_Windows-${{python-version}}.zip
+          release/ubuntu-latest-${{python-version}}/FPS_Grapher_Ubuntu-${{python-version}}.zip
+          release/macos-latest-${{python-version}}/FPS_Grapher_MacOS-${{python-version}}.zip
         bodyFile: "CHANGELOG.md"
         allowUpdates: true
         replacesArtifacts: true

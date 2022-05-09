@@ -311,7 +311,6 @@ def main(args):
     print("Mean Frametime: {0}ms".format(frametime_mean))
     print("Median Frametime: {0}ms".format(frametime_median))
 
-
 @Gooey(
     program_name="Framerate Graph Generator",
     default_size=(1280, 720),
@@ -475,7 +474,6 @@ def parse_arguments():
 
     return args
 
-
-if __name__ == "__main__":
+if __name__ == "__main__": 
     args = parse_arguments()
     main(args)
