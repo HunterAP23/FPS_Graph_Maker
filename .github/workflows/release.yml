@@ -29,7 +29,7 @@ jobs:
 
     - uses: actions/setup-python@v3
       with:
-        python-version: ${{python-version}}
+        python-version: ${{ python-version }}
 
     - name: Set up Python virtual environment
       run: python -m venv --upgrade-deps .venv
@@ -52,21 +52,21 @@ jobs:
     - name: Upload Windows artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: compiled-${{ matrix.os }}-${{python-version}}
+        name: compiled-${{ matrix.os }}-${{ python-version }}
         path: package/*win_amd64.pyd
       if: ${{matrix.os == 'windows-latest'}}
 
     - name: Upload Linux artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: compiled-${{ matrix.os }}-${{python-version}}
+        name: compiled-${{ matrix.os }}-${{ python-version }}
         path: package/*linux-gnu.so
       if: ${{matrix.os == 'ubuntu-latest'}}
 
     - name: Upload MacOS artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: compiled-${{ matrix.os }}-${{python-version}}
+        name: compiled-${{ matrix.os }}-${{ python-version }}
         path: package/*darwin.so
       if: ${{matrix.os == 'macos-latest'}}
 
@@ -82,7 +82,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v3
       with:
-        python-version: ${{python-version}}
+        python-version: ${{ python-version }}
 
     - name: Install Linux-specific dependencies
       run: sudo apt-get install build-essential libgtk-3-dev
@@ -110,20 +110,20 @@ jobs:
 
     - uses: actions/download-artifact@v3
       with:
-        name: compiled-${{ matrix.os }}-${{python-version}}
+        name: compiled-${{ matrix.os }}-${{ python-version }}
         path: package/
 
     - name: Create pyinstaller specfile
-      run: pyi-makespec.exe -F -n 'FPS_Grapher' -r package/compiled-${{ matrix.os }}-${{python-version}}/*,dll,package/compiled-${{ matrix.os }}-${{python-version}}/* --noconsole package/main.py
+      run: pyi-makespec.exe -F -n 'FPS_Grapher' -r package/compiled-${{ matrix.os }}-${{ python-version }}/*,dll,package/compiled-${{ matrix.os }}-${{ python-version }}/* --noconsole package/main.py
 
     - name: Build app with pyinstaller
-      run: pyinstaller -y --dist release/${{ matrix.os }}-${{python-version}}/ --clean FPS_Grapher.spec
+      run: pyinstaller -y --dist release/${{ matrix.os }}-${{ python-version }}/ --clean FPS_Grapher.spec
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.os }}-${{python-version}}
-        path: release/${{ matrix.os }}-${{python-version}}/
+        name: ${{ matrix.os }}-${{ python-version }}
+        path: release/${{ matrix.os }}-${{ python-version }}/
   
   release:
     if: |
@@ -143,23 +143,23 @@ jobs:
     - uses: actions/download-artifact@v3
 
     - run: |
-        cd release/windows-latest-${{python-version}}
-        zip -r FPS_Grapher_Windows-${{python-version}}.zip FPS_Grapher.exe
+        cd release/windows-latest-${{ python-version }}
+        zip -r FPS_Grapher_Windows-${{ python-version }}.zip FPS_Grapher.exe
 
     - run: |
-        cd release/ubuntu-latest-${{python-version}}
-        zip -r FPS_Grapher_Ubuntu-${{python-version}}.zip FPS_Grapher
+        cd release/ubuntu-latest-${{ python-version }}
+        zip -r FPS_Grapher_Ubuntu-${{ python-version }}.zip FPS_Grapher
     
     - run: |
-        cd release/macos-latest-${{python-version}}
+        cd release/macos-latest-${{ python-version }}
         zip -r FPS_Grapher_MacOS-$-{{python-version}}.zip FPS_Grapher.app 
     
     - uses: ncipollo/release-action@v1
       with:
         artifacts: |
-          release/windows-latest-${{python-version}}/FPS_Grapher_Windows-${{python-version}}.zip
-          release/ubuntu-latest-${{python-version}}/FPS_Grapher_Ubuntu-${{python-version}}.zip
-          release/macos-latest-${{python-version}}/FPS_Grapher_MacOS-${{python-version}}.zip
+          release/windows-latest-${{ python-version }}/FPS_Grapher_Windows-${{ python-version }}.zip
+          release/ubuntu-latest-${{ python-version }}/FPS_Grapher_Ubuntu-${{ python-version }}.zip
+          release/macos-latest-${{ python-version }}/FPS_Grapher_MacOS-${{ python-version }}.zip
         bodyFile: 'CHANGELOG.md'
         allowUpdates: true
         replacesArtifacts: true
