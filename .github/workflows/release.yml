@@ -47,9 +47,7 @@ jobs:
 
     - name: Enter virtual environment (Unix)
       run: sh .venv/bin/activate
-      if: |
-        ${{ matrix.os == 'ubuntu-latest' }} ||
-        ${{ matrix.os == 'macos-latest' }}
+      if: ${{ matrix.os != 'windows-latest' }}
 
     - name: Install dependencies and Cython
       run: python3 -m pip install -U pip setuptools wheel cython
@@ -79,6 +77,7 @@ jobs:
       if: ${{ matrix.os == 'macos-latest' }}
 
   build:
+    needs: compile
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -132,7 +131,7 @@ jobs:
         path: package/
 
     - name: Create pyinstaller specfile
-      run: pyi-makespec.exe -F -n 'FPS_Grapher' -r package/compiled-${{ matrix.os }}-${{ matrix.python-version }}/*,dll,package/compiled-${{ matrix.os }}-${{ matrix.python-version }}/* --noconsole package/main.py
+      run: pyi-makespec -F -n 'FPS_Grapher' -r package/compiled-${{ matrix.os }}-${{ matrix.python-version }}/*,dll,package/compiled-${{ matrix.os }}-${{ matrix.python-version }}/* --noconsole package/main.py
 
     - name: Build app with pyinstaller
       run: pyinstaller -y --dist release/${{ matrix.os }}-${{ matrix.python-version }}/ --clean FPS_Grapher.spec
