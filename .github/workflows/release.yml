@@ -94,7 +94,7 @@ jobs:
 
     - name: Check if requirements.txt includes the gooey library
       run: echo "gooey_present=$(grep -ic gooey src/requirements.txt)" >> $GITHUB_ENV
-      if: ${{ matrix.os == 'ubuntu-latest' }
+      if: ${{ matrix.os == 'ubuntu-latest' }}
 
     - name: Install Linux-specific dependencies
       run: |
