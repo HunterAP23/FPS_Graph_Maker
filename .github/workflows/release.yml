@@ -121,7 +121,7 @@ jobs:
       run: pip install wxPython-4.1.1-cp39-cp39-linux_x86_64.whl
       if: |
         ${{ matrix.os == 'ubuntu-latest' }} &&
-        ${{ gooey_present > 0 }}
+        ${{ env.gooey_present > 0 }}
 
     - name: Install Python dependencies
       run: python3 -m pip install -r src/requirements.txt
