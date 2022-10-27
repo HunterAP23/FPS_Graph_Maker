@@ -117,8 +117,8 @@ def main(args):
     index_fixed = []
     for i in df.index:
         index_fixed.append(i.replace("_", " ").replace("-", " ").replace(":", " "))
-    for i in range(len(index_fixed)):
-        i_split = index_fixed[i].split(" ")
+    for i, v in enumerate(index_fixed):
+        i_split = v.split(" ")
         i_dt = dt(
             year=int(i_split[0]),
             month=int(i_split[1]),
@@ -141,8 +141,8 @@ def main(args):
 
     index_scaled = []
     df.index = df.index.to_pytimedelta()
-    for i in range(len(df.index)):
-        index_scaled.append(df.index[i].total_seconds())
+    for v in df.index:
+        index_scaled.append(v.total_seconds())
     df.index = index_scaled
 
     df.to_csv("df.csv")

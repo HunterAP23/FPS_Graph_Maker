@@ -7,12 +7,12 @@ on:
     branches: [ main ]
 
 jobs:
-  compile_windows:
+  build_windows:
     runs-on: 'windows-latest'
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', 'pypy-3.9']
+        python-version: ['3.9']
     
     steps:
     - uses: actions/checkout@v3
@@ -26,32 +26,58 @@ jobs:
 
     - uses: actions/setup-python@v3
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ python-version }}
+        cache-dependency-path: 'src/requirements.txt'
 
     - name: Set up Python virtual environment
-      run: python3 -m venv .venv
+      run: |
+        python3 -m ensurepip
+        python3 -m venv .venv
+      if: ${{ python-version == '3.9' }}
+    
+    - name: Set up Pypy virtual environment
+      run: |
+        pypy3.9 -m ensurepip
+        pypy3.9 -m venv .venv
+      if: ${{ python-version == 'pypy-3.9' }}
 
-    - name: Enter virtual environment (Windows)
+    - name: Enter virtual environment
       run: .venv/Scripts/activate
 
-    - name: Install dependencies and Cython
-      run: python3 -m pip install -U pip setuptools wheel cython
+    - name: Install dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -U six setuptools wheel cython pyinstaller
 
-    - name: Compile cythonized code 
-      run: python3 src/setup.py build_ext
+    - name: Compile cythonized code
+      run: python src/setup.py build_ext
+
+    - name: Install Python dependencies
+      run: python -m pip install -r src/requirements.txt
+
+    - name: Create Python pyinstaller specfile
+      run: pyi-makespec -F -n '${{ github.repository }}' -r package/${{ github.repository }}.cp39-win_amd64.pyd,dll,package/${{ github.repository }}.cp39-win_amd64.pyd --noconsole package/main.py
+      if: ${{ python-version == '3.9' }}
+
+    - name: Create Pypy pyinstaller specfile
+      run: pyi-makespec -F -n '${{ github.repository }}' -r package/${{ github.repository }}.pypy39-pp73-win_amd64.pyd,dll,package/${{ github.repository }}.pypy39-pp73-win_amd64.pyd --noconsole package/main.py
+      if: ${{ python-version == '3.9' }}
+
+    - name: Build app with pyinstaller
+      run: pyinstaller -y --dist release/windows-${{ matrix.python-version }}/ --clean ${{ github.repository }}.spec
     
-    - name: Upload Windows artifacts
+    - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: compiled-windows-${{ matrix.python-version }}
-        path: package/*win_amd64.pyd
+        name: windows-${{ matrix.python-version }}
+        path: release/windows-${{ matrix.python-version }}/
 
-  compile_ubuntu:
+  build_ubuntu:
     runs-on: 'ubuntu-latest'
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', 'pypy-3.9']
+        python-version: ['3.9']
 
     steps:
     - uses: actions/checkout@v3
@@ -59,30 +85,72 @@ jobs:
     - uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+        cache-dependency-path: 'src/requirements.txt'
 
-    - name: Ensure pip for Linux
+    - name: Update APT
       run: |
         sudo apt update
         sudo apt upgrade -y
-        sudo apt install -y python3-venv python3-pip
+      
+    - name: Install Python dependencies
+      run: sudo apt install -y python3.9-venv python3.9-dev python3-pip
+      if: ${{ python-version == '3.9' }}
+
+    - name: Install Pypy dependencies
+      run: sudo apt install -y pypy3-dev
+      if: ${{ python-version == 'pypy-3.9' }}
 
     - name: Set up Python virtual environment
-      run: python3 -m venv .venv
+      run: python3.9 -m venv .venv
+      if: ${{ python-version == '3.9' }}
 
-    - name: Enter virtual environment (Unix)
-      run: sh .venv/bin/activate
+    - name: Set up Pypy virtual environment
+      run: pypy3.9 -m venv .venv
+      if: ${{ python-version == 'pypy-3.9' }}
+
+    - name: Enter virtual environment
+      run: bash .venv/bin/activate
 
     - name: Install dependencies and Cython
-      run: python3 -m pip install -U pip setuptools wheel cython
+      run: |
+        pip install -U pip
+        pip install -U six setuptools wheel cython pyinstaller
+
+    - name: Check if requirements.txt includes the gooey library
+      run: echo "gooey_present=$(grep -ic gooey src/requirements.txt)" >> $GITHUB_ENV
+
+    - name: Install Linux-specific dependencies
+      run: sudo apt install build-essential libgtk-3-dev libjpeg zlib1g zlib1g-dev
+      if: ${{ env.gooey_present > 0 }}
+
+    - name: Install wxPython
+      run: 
+        pip download wxPython==4.1.1
+        pip wheel wxPython-4.1.1.tar.gz
+        rm six*.whl
+        rm numpy*.whl
+        rm Pillow*.whl
+        pip install wxPython-4.1.1.tar.gz
+        rm wxPython*.whl
+      if: ${{ env.gooey_present > 0 }}
+
+    - name: Install Python dependencies
+      run: python -m pip install -r src/requirements.txt
 
     - name: Compile cythonized code 
-      run: python3 src/setup.py build_ext
+      run: python src/setup.py build_ext
 
-    - name: Upload Linux artifacts
+    - name: Create pyinstaller specfile
+      run: pyi-makespec -F -n '${{ github.repository }}' -r package/compiled-ubuntu-${{ matrix.python-version }}/*,dll,package/compiled-ubuntu-${{ matrix.python-version }}/* --noconsole package/main.py
+
+    - name: Build app with pyinstaller
+      run: pyinstaller -y --dist release/ubuntu-${{ matrix.python-version }}/ --clean ${{ github.repository }}.spec
+    
+    - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: compiled-ubuntu-${{ matrix.python-version }}
-        path: package/*linux-gnu.so
+        name: ubuntu-${{ matrix.python-version }}
+        path: release/ubuntu-${{ matrix.python-version }}/
 
   compile_mac:
     runs-on: 'macos-latest'
@@ -97,140 +165,29 @@ jobs:
     - uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+        cache-dependency-path: 'src/requirements.txt'
 
     - name: Set up Python virtual environment
       run: python3 -m venv .venv
 
-    - name: Enter virtual environment (Unix)
+    - name: Enter virtual environment
       run: sh .venv/bin/activate
     
     - name: Install dependencies and Cython
-      run: python3 -m pip install -U pip setuptools wheel cython
+      run: |
+        python3 -m pip install -U pip
+        python3 -m pip install -U six setuptools wheel cython
 
     - name: Compile cythonized code 
       run: python3 src/setup.py build_ext
 
-    - name: Upload MacOS artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: compiled-mac-${{ matrix.python-version }}
-        path: package/*darwin.so
-
-  build_windows:
-    needs: compile_windows
-    runs-on: 'windows-latest'
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.9', 'pypy-3.9']
-
-    steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
+    - name: Enter virtual environment
+      run: sh .venv/bin/activate
 
     - name: Install prerequisite Python dependencies
       run: |
         python3 -m pip install -U pip 
-        python3 -m pip install -U setuptools wheel pyinstaller
-
-    - name: Install Python dependencies
-      run: python3 -m pip install -r src/requirements.txt
-
-    - uses: actions/download-artifact@v3
-      with:
-        name: compiled-windows-${{ matrix.python-version }}
-        path: package/
-
-    - name: Create pyinstaller specfile
-      run: pyi-makespec -F -n 'FPS_Grapher' -r package/compiled-windows-${{ matrix.python-version }}/*,dll,package/compiled-windows-${{ matrix.python-version }}/* --noconsole package/main.py
-
-    - name: Build app with pyinstaller
-      run: pyinstaller -y --dist release/windows-${{ matrix.python-version }}/ --clean FPS_Grapher.spec
-    
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: windows-${{ matrix.python-version }}
-        path: release/windows-${{ matrix.python-version }}/
-  
-  build_ubuntu:
-    needs: compile_ubuntu
-    runs-on: 'ubuntu-latest'
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.9', 'pypy-3.9']
-
-    steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    
-    - name: Check if requirements.txt includes the gooey library
-      run: echo "gooey_present=$(grep -ic gooey src/requirements.txt)" >> $GITHUB_ENV
-
-    - name: Install Linux-specific dependencies
-      run: |
-        sudo apt update
-        sudo apt upgrade -y
-        sudo apt install -y python3-venv python3-pip
-        sudo apt install build-essential libgtk-3-dev
-      if: ${{ env.gooey_present > 0 }}
-
-    - name: Download wxPython build directly
-      run: wget https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04/wxPython-4.1.1-cp39-cp39-linux_x86_64.whl
-      if: ${{ env.gooey_present > 0 }}
-
-    - name: Install prerequisite Python dependencies
-      run: |
-        python3 -m pip install -U pip 
-        python3 -m pip install -U setuptools wheel pyinstaller
-
-    - name: Install wxPython wheel and dependencies
-      run: pip install wxPython-4.1.1-cp39-cp39-linux_x86_64.whl
-      if: ${{ env.gooey_present > 0 }}
-
-    - name: Install Python dependencies
-      run: python3 -m pip install -r src/requirements.txt
-
-    - uses: actions/download-artifact@v3
-      with:
-        name: compiled-ubuntu-${{ matrix.python-version }}
-        path: package/
-
-    - name: Create pyinstaller specfile
-      run: pyi-makespec -F -n 'FPS_Grapher' -r package/compiled-ubuntu-${{ matrix.python-version }}/*,dll,package/compiled-ubuntu-${{ matrix.python-version }}/* --noconsole package/main.py
-
-    - name: Build app with pyinstaller
-      run: pyinstaller -y --dist release/ubuntu-${{ matrix.python-version }}/ --clean FPS_Grapher.spec
-    
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: ubuntu-${{ matrix.python-version }}
-        path: release/ubuntu-${{ matrix.python-version }}/
-
-  build_mac:
-    needs: compile_mac
-    runs-on: 'macos-latest'
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.9', 'pypy-3.9']
-
-    steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install prerequisite Python dependencies
-      run: |
-        python3 -m pip install -U pip 
-        python3 -m pip install -U setuptools wheel pyinstaller
+        python3 -m pip install -U six setuptools wheel pyinstaller
 
     - name: Install Python dependencies
       run: python3 -m pip install -r src/requirements.txt
@@ -263,7 +220,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-          python-version: ['3.9', 'pypy-3.9']
+          python-version: ['3.9']
     steps:
     - uses: actions/checkout@v3
 
