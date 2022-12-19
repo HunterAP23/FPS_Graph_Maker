@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fps-graph-maker"
-version = "0.1.0"
+version = "1.0.0"
 description = "Creates live FPS graphs from Elgato 4K Capture Utility CSV logs."
 authors = ["HunterAP23 <etgarkaspi@gmail.com>"]
 license = "GPLv3"
